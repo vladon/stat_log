@@ -7,14 +7,7 @@ using namespace rc::stat_log;
 struct sndcf
 {
    NAME = "SNDCF";
-   struct IpDwnTag{
-      NAME = "IP_DOWN";
-   };
-   struct IpUpTag{
-      NAME = "IP_UP";
-   };
-
-   using ChildTypes = vector<IpDwnTag, IpUpTag>;
+   MAKE_STAT_TAGS( (IpDwn) (IpUp) )
 };
 
 struct sis_adapt
@@ -25,19 +18,8 @@ struct sis_adapt
    };
    struct NodeStatsTag{
       NAME = "NODE_STATS";
-      struct RxCountTag{
-         NAME = "RX_COUNTERS";
-      };
-      struct CorrScoreTag{
-         NAME = "CORR_SCORE";
-      };
-      struct LinkIndTag{
-         NAME = "LINK_IND";
-      };
-
-      using ChildTypes = vector<RxCountTag, CorrScoreTag, LinkIndTag>;
+      MAKE_STAT_TAGS( (RxCount) (CorrScore) (LinkInd))
    };
-
    using ChildTypes = vector<BlahTag, NodeStatsTag>;
 };
 
@@ -133,7 +115,6 @@ int main(void)
 {
    using TagHierarchy = TdrsOpStat::TagHierarchy;
    std::cout << "The Type = " << TypeId<TagHierarchy>{} << std::endl;
-#if 1
 
    shared_mem_backend shm_backend;
    shm_backend.setParams("ROB", sizeof(theOpStats));
@@ -143,11 +124,7 @@ int main(void)
 
    //Next, need to inform tdrsOpStat of the start of shared_memory
    tdrsOpStat.assignShmPtr(shm_start);
-#if 1
    tdrsControlStat.assignShmPtr(shm_start);
-#endif
-
-
 
    std::cout << "\n\n, all strings\n";
    PrintStrings::print(TagHierarchy{}, boost::mpl::true_{});
@@ -155,15 +132,16 @@ int main(void)
    // std::cout << "Tags: = " << TypeId<tdrsOpStat>{} << std::endl;
 
    getValue<sis_adapt::BlahTag>(theOpStats) = 42;
+   getValue<sis_adapt::NodeStatsTag::RxCountTag>(theOpStats) = 38;
    std::cout <<  getValue<sis_adapt::BlahTag>(theOpStats) << std::endl;
 
-#if 1
    std::cout <<  "OPERATIONAL value = "
       << getValue<sis_adapt::BlahTag>(tdrsControlStat.theStats) << std::endl;
-#endif
 
    PrintStrings::print(TagHierarchy{}, boost::mpl::true_{});
 
-#endif
+
+   //
+   // std::string query_string = "
 
 }

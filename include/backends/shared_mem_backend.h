@@ -1,4 +1,5 @@
-#include <boost/interprocess/shared_memory_object.hpp>
+// #include <boost/interprocess/shared_memory_object.hpp>
+#include <vector>
 namespace rc
 {
 namespace stat_log
@@ -7,11 +8,20 @@ namespace stat_log
    class shared_mem_backend
    {
       public:
-         setParams(const std::string& name, size_t size
-      private:
-         std::shared_ptr<boost::interprocess::shared_memory_object> shm_ptr;
-   };
+         void setParams(const std::string& name, size_t size)
+         {
+            memory.resize(size);
+         }
 
+         char* getMemoryPtr()
+         {
+            return memory.data();
+         }
+
+      private:
+         // std::shared_ptr<boost::interprocess::shared_memory_object> shm_ptr;
+         std::vector<char> memory;
+   };
 }
 }
 

@@ -1,11 +1,13 @@
 #pragma once
 #include "fusion_includes.h"
 #include "util/stat_log_impl.h"
-//using namespace boost::fusion;
+#include "parsers/parent_parser.h"
 
-#define NAME static constexpr const char* name
-namespace rc
-{
+#include <boost/algorithm/string/join.hpp>
+#if 0
+#include <vector>
+#endif
+
 namespace stat_log
 {
 
@@ -66,9 +68,32 @@ struct LogStatOperational : detail::LogStatBase<UserStatH, true>
 template <typename UserStatH>
 struct LogStatControl : detail::LogStatBase<UserStatH, false>
 {
+#if 1
+   using BaseClass = detail::LogStatBase<UserStatH, false>;
+   using TopNode = typename BaseClass::TopNode;
+   using TagHierarchy = typename BaseClass::TagHierarchy;
+
+   void parseUserCommands(int argc, char** argv)
+   {
+      //First extract the Component hierarchy portion of
+      // the user_input (if it exists)
+
+      std::vector<std::string> user_strings;
+      for(int i = 1; i < argc; ++i)
+         user_strings.push_back(argv[i]);
+
+      std::string user_cmd_line = boost::algorithm::join(user_strings, " ");
+      std::cout << "User cmd line = " << user_cmd_line << std::endl;
+      std::string component_str = getComponentName(user_cmd_line);
+      std::cout << "COMPONENT = " << component_str << std::endl;
+
+      std::cout << "Is parent = " << detail::is_parent<TagHierarchy>::value << std::endl;
+      parse<TagHierarchy>(this->theStats, component_str, user_cmd_line);
+   }
+#endif
+
 };
 
-}
 }
 
 

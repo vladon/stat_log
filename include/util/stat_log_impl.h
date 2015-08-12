@@ -1,10 +1,7 @@
 #pragma once
 #include "fusion_includes.h"
-//using namespace boost::fusion;
 
 #define NAME static constexpr const char* name
-namespace rc
-{
 namespace stat_log
 {
 
@@ -19,6 +16,7 @@ namespace detail
    template <typename U> struct AlwaysVoid {
       typedef void type;
    };
+
    template <typename Tag, typename MatchingTags, bool IsOperational>
    struct GenericStat
    {
@@ -58,10 +56,12 @@ namespace detail
       using SerialType = typename BaseClass::SerialType;
    };
 
+   ///////////////
+
    template <typename T>
       struct is_parent
       {
-         //T is of type "struct TagString"
+         //T is of type "struct TagNode"
          //Then T::child_list should be either another sequence (if parent) or int
          static const bool value = mpl::is_sequence<typename T::child_list>::value;
       };
@@ -71,7 +71,7 @@ namespace detail
              >
       struct stat_inserter
       {
-         //ThisStat is of type "struct TagString"
+         //ThisStat is of type "struct TagNode"
          using ThisTag = typename ThisStat::tag;
          //Add the entire lineage of parents to the matching tags for
          // this statistic
@@ -98,7 +98,7 @@ namespace detail
          using ChildTagHierarchy = typename TagHierarchy::child_list;
 
          // _1 == GlobalTagVec
-         // _2 == the iterator to the child TagString
+         // _2 == the iterator to the child TagNode
          using type = typename mpl::fold<
                ChildTagHierarchy,
                GlobalTagVec,
@@ -141,28 +141,31 @@ namespace detail
             {};
       };
 
-   template <typename T, typename P, typename C = void>
-      struct TagString
+   template <typename T, typename P, int Depth, typename C = void>
+      struct TagNode
       {
          NAME = T::name;
          using tag = T;
          using parent = P;
+         static const int depth = Depth;
          using child_list = C;
       };
 
-   template <typename T, typename Parent, typename Dummy = void>
+   template <typename T, typename Parent, typename Depth, typename Dummy = void>
       struct GenTagHierarchy
       {
-         using type = TagString<T, Parent>;
+         using type = TagNode<T, Parent, Depth::value>;
       };
 
-   template <typename T, typename Parent>
-      struct GenTagHierarchy<T, Parent, typename AlwaysVoid<typename T::ChildTypes>::type>
+   template <typename T, typename Parent, typename Depth>
+      struct GenTagHierarchy<T, Parent, Depth,
+         typename AlwaysVoid<typename T::ChildTypes>::type>
       {
          using ChildTypes = typename T::ChildTypes;
+         using ChildDepth = std::integral_constant<int, Depth::value + 1>;
          using child_type_vec = typename boost::mpl::transform<
-            ChildTypes, GenTagHierarchy<boost::mpl::_, T>>::type;
-         using type = TagString<T, Parent, child_type_vec>;
+            ChildTypes, GenTagHierarchy<boost::mpl::_, T, ChildDepth>>::type;
+         using type = TagNode<T, Parent, Depth::value, child_type_vec>;
       };
 
    template <typename UserStatH, bool IsOperational>
@@ -172,28 +175,27 @@ namespace detail
       {
          NAME = "";
       };
-      using Top = detail::TagString<TopName, void>;
-      public:
-         using TagHierarchy = typename detail::GenTagHierarchy<UserStatH, Top>::type;
-         using TheStats = typename boost::fusion::result_of::as_vector<
-            typename detail::stat_creator<TagHierarchy, IsOperational>::type>::type;
+      using TopNode = detail::TagNode<TopName, void, 0>;
 
-         void assignShmPtr(char* shm_ptr)
-         {
-            using namespace boost::fusion;
-            for_each(theStats, [&shm_ptr](auto& stat)
-                  {
-                  using StatType = std::remove_reference_t<decltype(stat)>;
-                  stat.setShmPtr(shm_ptr);
-                  std::cout << "assignSmPtr to " << TypeId<StatType>{}
-                  << std::hex << (long int)shm_ptr << std::endl;
-                  shm_ptr += sizeof(typename StatType::SerialType);
-                  });
+      using TagHierarchy = typename detail::GenTagHierarchy<UserStatH, TopNode,
+            std::integral_constant<int, 0> >::type;
+      using TheStats = typename boost::fusion::result_of::as_vector<
+         typename detail::stat_creator<TagHierarchy, IsOperational>::type>::type;
 
-         }
-         TheStats theStats;
+      void assignShmPtr(char* shm_ptr)
+      {
+         using namespace boost::fusion;
+         for_each(theStats, [&shm_ptr](auto& stat)
+               {
+               using StatType = std::remove_reference_t<decltype(stat)>;
+               stat.setShmPtr(shm_ptr);
+               std::cout << "assignSmPtr to " << TypeId<StatType>{}
+               << std::hex << (long int)shm_ptr << std::endl;
+               shm_ptr += sizeof(typename StatType::SerialType);
+               });
+
+      }
+      TheStats theStats;
    };
-}
-
 }
 }

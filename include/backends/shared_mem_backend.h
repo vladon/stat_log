@@ -1,7 +1,5 @@
 // #include <boost/interprocess/shared_memory_object.hpp>
 #include <vector>
-namespace rc
-{
 namespace stat_log
 {
    //TODO: templates?
@@ -22,7 +20,6 @@ namespace stat_log
          // std::shared_ptr<boost::interprocess::shared_memory_object> shm_ptr;
          std::vector<char> memory;
    };
-}
 }
 
 

@@ -2,64 +2,11 @@
 
 #include "parsers/parser_common.h"
 #include "parsers/leaf_parser.h"
-
+#include "util/utils.h"
 
 namespace stat_log
 {
 
-namespace detail
-{
-   namespace po = boost::program_options;
-
-   auto getParentOptions()
-   {
-      po::options_description desc("Options", TERM_NUM_COLUMNS);
-      desc.add_options()
-         ("help", po::value<std::string>()->implicit_value(""),
-          "Show help memu")
-         ("component", po::value<std::string>()->default_value(""),
-          "TODO")
-         ("list-stats", po::bool_switch()->default_value(false),
-          "List all statistics");
-      return std::move(desc);
-   }
-}
-
-inline std::string getComponentName(std::string cmd_line)
-{
-   namespace po = boost::program_options;
-   std::string component_str;
-   auto desc = detail::getParentOptions();
-
-   po::variables_map vm;
-   po::store(po::command_line_parser(tokenize(cmd_line))
-         .options(desc)
-         .run(),
-         vm);
-   po::notify(vm);
-   std::cout << "component count = " << vm.count("component") << std::endl;
-   return vm["component"].as<std::string>();
-}
-
-inline auto getHeadTail(std::string s, char delim)
-{
-   auto pos = s.find(delim);
-   std::tuple<std::string, std::string> ret;
-   if(pos != std::string::npos)
-   {
-      std::get<0>(ret) =  s.substr(0,pos);
-      std::get<1>(ret) =  s.substr(pos+1);
-   }
-   else
-   {
-      std::get<0>(ret) =  s;
-   }
-   return ret;
-}
-
-#if 1
-template <typename Stat>
-struct StatCommander;
 
 template<typename Stat>
 struct DoCmd<Stat, true>
@@ -79,7 +26,6 @@ struct DoCmd<Stat, true>
 };
 
 
-#endif
 template <typename TagNode, typename Stat>
 typename std::enable_if_t<detail::is_parent<TagNode>::value>
 processCommands(Stat& stat, const std::string& user_cmds)
@@ -107,7 +53,7 @@ processCommands(Stat& stat, const std::string& user_cmds)
    if(vm["list-stats"].as<bool>())
    {
       cmd = StatCmd::PRINT_STAT_TYPE;
-      indent(TagNode::depth);
+      detail::indent(TagNode::depth);
       using Parent = typename TagNode::parent;
       std::cout << "(PARENT) Type is = " << TagNode::name
             << ", parent is " << Parent::name
@@ -163,7 +109,6 @@ void parse(Stat& stat, std::string& component_name, std::string& user_cmds)
           parse<decltype(ctag_node)>(stat, child_component_name, user_cmds);
       });
 }
-
 
 }
 

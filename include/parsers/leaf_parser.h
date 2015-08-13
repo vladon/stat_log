@@ -1,4 +1,5 @@
 #pragma once
+#include "util/utils.h"
 #include "parsers/parser_common.h"
 
 
@@ -31,7 +32,7 @@ struct DoCmd<Stat, false>
    template <typename TagNode>
    static void Go(Stat& stat, StatCmd cmd, boost::any& cmd_arg)
    {
-      indent(TagNode::depth);
+      detail::indent(TagNode::depth);
       using Parent = typename TagNode::parent;
       using Tag = typename TagNode::tag;
       std::cout << "Type is = " << TagNode::name

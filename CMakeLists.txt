@@ -10,4 +10,3 @@ find_package(Boost 1.54 COMPONENTS program_options REQUIRED )
 add_executable(RcStatLog test/test.cpp)
 
 TARGET_LINK_LIBRARIES (RcStatLog ${Boost_LIBRARIES})
-# TARGET_LINK_LIBRARIES (text.exe ${Boost_LIBRARIES} readline)

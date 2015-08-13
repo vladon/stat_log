@@ -62,7 +62,8 @@ namespace detail
       struct is_parent
       {
          //T is of type "struct TagNode"
-         //Then T::child_list should be either another sequence (if parent) or int
+         //Then T::child_list should be either another sequence (if parent) or void
+         using type = typename mpl::is_sequence<typename T::child_list>::type;
          static const bool value = mpl::is_sequence<typename T::child_list>::value;
       };
 
@@ -82,7 +83,7 @@ namespace detail
                GenericOpStat<ThisTag, matching_tags>,
                GenericControlStat<ThisTag, matching_tags>
                >;
-         //Finally add this Repr to the global tag vec
+         //Finally add this statistic to the global tag vec
          using type = typename mpl::push_back<GlobalTagVec, this_stat>::type;
       };
 
@@ -116,7 +117,6 @@ namespace detail
    template <typename TagHierarchy, bool IsOperational>
       struct stat_creator
       {
-         // using IsOpType = typename std::integral_constant<bool, true>;
          using type = typename stat_creator_helper<
             mpl::vector<>, //Global Tag/Stat Vector
             mpl::vector<>, //Parent vector
@@ -191,11 +191,26 @@ namespace detail
                stat.setShmPtr(shm_ptr);
                std::cout << "assignSmPtr to " << TypeId<StatType>{}
                << std::hex << (long int)shm_ptr << std::endl;
-               shm_ptr += sizeof(typename StatType::SerialType);
+               shm_ptr += StatType::SerialType::getSize();
                });
 
       }
       TheStats theStats;
    };
+}
+template<typename Tag, typename T>
+auto getStatHandleView(T& stats)
+{
+   return boost::fusion::filter_view<T, detail::matches_tag<Tag>>(stats);
+}
+
+   template <typename Tag, typename T>
+auto& getValue(T& stats)
+{
+   using namespace boost::fusion;
+   auto statHdlView = getStatHandleView<Tag>(stats);
+   static_assert(result_of::size<decltype(statHdlView)>::value == 1,
+         "getValues requires a Leaf Tag!");
+   return deref(begin(statHdlView)).getValue();
 }
 }

@@ -1,8 +1,5 @@
 #include "stat_log.h"
 #include "backends/shared_mem_backend.h"
-// #include "parsers/parent_parser.h"
-#include <readline/readline.h>
-#include <readline/history.h>
 
 #include <iostream>
 #include <vector>
@@ -45,10 +42,20 @@ struct etdrs_stats
 namespace stat_log
 {
 
+   template <typename Repr>
+   struct Wrapper
+   {
+      static constexpr size_t getSize()
+      {
+         return sizeof(Repr);
+      }
+      Repr storage;
+   };
+
    template <typename T, bool IsOperational>
    struct stat_traits
    {
-      using SerialType = int;
+      using SerialType = Wrapper<int>;
       using ProxyType = OpProxyBasic;
    };
 
@@ -71,55 +78,7 @@ TdrsOpStat tdrsOpStat;
 using TdrsControlStat = LogStatControl<etdrs_stats>;
 TdrsControlStat tdrsControlStat;
 
-int level = 0;
-#if 1
 auto& theOpStats = tdrsOpStat.theStats;
-
-struct PrintStrings
-{
-   static void indent()
-   {
-      int i = level;
-      while(i-- > 0)
-         std::cout << "\t";
-   }
-   template <typename T>
-      void operator()(T& t) const
-      {
-         print(t, typename traits::is_sequence<typename T::child_list>::type{});
-      }
-
-   template <typename T>
-      static void print(T type, boost::mpl::true_)
-      {
-         indent();
-         using Parent = typename T::parent;
-         std::cout << "(PARENT) Type is = " << T::name
-            << ", parent is " << Parent::name
-            << ", depth is " << T::depth
-            << std::endl;
-         level++;
-         using ChildList = typename T::child_list;
-         for_each(ChildList{}, PrintStrings{});
-         level--;
-      }
-
-   template <typename T>
-      static void print(T type, boost::mpl::false_)
-      {
-         indent();
-         using Parent = typename T::parent;
-         using Tag = typename T::tag;
-         std::cout << "Type is = " << T::name
-            << ", parent is " << Parent::name
-            << ", value is " << getValue<Tag>(theOpStats)
-            << ", depth is " << T::depth
-            // << ", addr is " << std::hex << &getValue<Tag>(theOpStats)
-            << std::endl;
-      }
-};
-#endif
-
 
 int main(int argc, char** argv)
 {
@@ -137,11 +96,6 @@ int main(int argc, char** argv)
    tdrsOpStat.assignShmPtr(shm_start);
    tdrsControlStat.assignShmPtr(shm_start);
 
-   std::cout << "\n\n, all strings\n";
-   PrintStrings::print(TagHierarchy{}, boost::mpl::true_{});
-
-   // std::cout << "Tags: = " << TypeId<tdrsOpStat>{} << std::endl;
-
    getValue<sis_adapt::BlahTag>(theOpStats) = 42;
    getValue<sis_adapt::NodeStatsTag::RxCountTag>(theOpStats) = 38;
    std::cout <<  getValue<sis_adapt::BlahTag>(theOpStats) << std::endl;
@@ -149,28 +103,9 @@ int main(int argc, char** argv)
    std::cout <<  "OPERATIONAL value = "
       << getValue<sis_adapt::BlahTag>(tdrsControlStat.theStats) << std::endl;
 
-   PrintStrings::print(TagHierarchy{}, boost::mpl::true_{});
 #endif
 
 
-#if 0
-   auto desc = createTopConfig();
-   processCmdLineOptions(*desc.get(), argc, argv);
-#endif
    tdrsControlStat.parseUserCommands(argc, argv);
-
-#if 0
-   char* line;
-   while(1)
-   {
-      line = readline("> ");
-
-
-      add_history(line);
-   }
-#endif
-
-   //
-   // std::string query_string = "
 
 }

@@ -4,9 +4,6 @@
 #include "parsers/parent_parser.h"
 
 #include <boost/algorithm/string/join.hpp>
-#if 0
-#include <vector>
-#endif
 
 namespace stat_log
 {
@@ -43,22 +40,6 @@ struct OpProxyBasic
 //Observer/Control proxies
 //TODO:
 //
-
-template<typename Tag, typename T>
-auto getStatHandleView(T& stats)
-{
-   return boost::fusion::filter_view<T, detail::matches_tag<Tag>>(stats);
-}
-
-template <typename Tag, typename T>
-auto& getValue(T& stats)
-{
-   using namespace boost::fusion;
-   auto statHdlView = getStatHandleView<Tag>(stats);
-   static_assert(result_of::size<decltype(statHdlView)>::value == 1,
-         "getValues requires a Leaf Tag!");
-    return deref(begin(statHdlView)).getValue();
-}
 
 template <typename UserStatH>
 struct LogStatOperational : detail::LogStatBase<UserStatH, true>

@@ -1,85 +1,44 @@
 #pragma once
 
-#include <boost/program_options.hpp>
-#include <boost/program_options/options_description.hpp>
-#include <boost/program_options/parsers.hpp>
-#include <boost/program_options/variables_map.hpp>
+#include "parsers/parser_common.h"
+#include "parsers/leaf_parser.h"
 
-#include <boost/tokenizer.hpp>
-#include <boost/token_functions.hpp>
-#include <boost/algorithm/string.hpp>
-
-#include <algorithm>
-#include <string>
-#include <iostream>
-#include <fstream>
-#include <memory>
-#include <regex>
-#include <vector>
-#include <stdexcept>
-#include <cstdlib>
-#include <assert.h>
-
-#define TERM_NUM_COLUMNS 100
 
 namespace stat_log
 {
-namespace po = boost::program_options;
 
-std::vector<std::string> tokenize(const std::string& input)
+namespace detail
 {
-   typedef boost::escaped_list_separator<char> separator_type;
-   separator_type separator("\\",     // The escape characters.
-         "= ",     // The separator characters.
-         "\"\'");  // The quote characters.
+   namespace po = boost::program_options;
 
-   // Tokenize the intput.
-   boost::tokenizer<separator_type> tokens(input, separator);
-
-   // Copy non-empty tokens from the tokenizer into the result.
-   std::vector<std::string> result;
-   copy_if(tokens.begin(), tokens.end(), std::back_inserter(result),
-         [](auto& str)
-         {
-         return !str.empty();
-
-         });
-   return result;
+   auto getParentOptions()
+   {
+      po::options_description desc("Options", TERM_NUM_COLUMNS);
+      desc.add_options()
+         ("help", po::value<std::string>()->implicit_value(""),
+          "Show help memu")
+         ("component", po::value<std::string>()->default_value(""),
+          "TODO")
+         ("list-stats", po::bool_switch()->default_value(false),
+          "List all statistics");
+      return std::move(desc);
+   }
 }
-void printComponents(std::string blah)
-{
-   std::cout << "In print components" << std::endl;
-}
-
-   template <typename Tag, typename T>
-auto createParentConfig()
-{
-   auto topLevelOptionHandler = std::make_unique<po::options_description>();
-
-   topLevelOptionHandler->add_options()
-      ("list-components",
-       // po::value<std::string>()->notifier(&printComponents),
-       po::value<std::string>()->implicit_value("")->zero_tokens()->notifier(&printComponents),
-       "List the statistic components\n");
-   // po::value<std::string>()->composing()->notifier(printComponents),
-   return topLevelOptionHandler;
-}
-
 
 inline std::string getComponentName(std::string cmd_line)
 {
+   namespace po = boost::program_options;
    std::string component_str;
-   auto component_extractor = po::options_description{};
-   component_extractor.add_options()
-      ("component",
-       po::value<std::string>()->notifier([&](std::string comp){ component_str = comp;}));
+   auto desc = detail::getParentOptions();
+
    po::variables_map vm;
    po::store(po::command_line_parser(tokenize(cmd_line))
-         .options(component_extractor)
+         .options(desc)
          .run(),
          vm);
    po::notify(vm);
-   return component_str;
+   std::cout << "component count = " << vm.count("component") << std::endl;
+   return vm["component"].as<std::string>();
 }
 
 inline auto getHeadTail(std::string s, char delim)
@@ -98,44 +57,73 @@ inline auto getHeadTail(std::string s, char delim)
    return ret;
 }
 
+#if 1
+template <typename Stat>
+struct StatCommander;
 
-inline void processCmdLineOptions(po::options_description& option_desc, int argc, char** argv)
+template<typename Stat>
+struct DoCmd<Stat, true>
 {
-   using std::cout;
-   using std::endl;
-   try
+   template <typename TagNode>
+   static void Go(Stat& stat, StatCmd cmd, boost::any& cmd_arg)
    {
-      po::variables_map vm;
-      po::options_description desc("Command Line Options", TERM_NUM_COLUMNS);
-      desc.add(option_desc);
-      po::store(po::command_line_parser(argc, argv)
-            .options(desc)
-            .run(),
-            vm);
-      po::notify(vm);
-
+      using Children = typename TagNode::child_list;
+      for_each(Children{}, [&](auto tag_node)
+         {
+            using ChildTagNode = decltype(tag_node);
+            using IsParent = typename detail::is_parent<ChildTagNode>;
+            using TheDoCmd = DoCmd<Stat, IsParent::value>;
+            TheDoCmd::template Go<ChildTagNode>(stat, cmd, cmd_arg);
+         });
    }
-   catch (std::exception& e)
-   {
-      std::cout << e.what() << "\n";
-      std::exit(1);
-   }
-}
+};
 
-template <typename TagNode, typename Stat,
-         typename std::enable_if<
-         !detail::is_parent<TagNode>::value
-         >::type* = nullptr
-   >
-void parse(Stat& stat, std::string& component_name, std::string& user_cmds)
+
+#endif
+template <typename TagNode, typename Stat>
+typename std::enable_if_t<detail::is_parent<TagNode>::value>
+processCommands(Stat& stat, const std::string& user_cmds)
 {
-   std::cout << "IN PARSE LEAF: " << TagNode::name
-      << ", component name = " << component_name << std::endl;
-   if(component_name == TagNode::name)
+   namespace po = boost::program_options;
+   using namespace boost::fusion;
+   std::cout << "PROCESS CMDS parent" << std::endl;
+
+   auto desc = detail::getParentOptions();
+   po::variables_map vm;
+   po::store(po::command_line_parser(tokenize(user_cmds))
+         .options(desc)
+         .run(),
+         vm);
+
+   if(vm.count("help"))
    {
-      std::cout << "Matches leaf!" << std::endl;
+      std::cout << desc << std::endl;
    }
-   // processCommands<TagNode, false>(user_cmds);
+
+   auto cmd = StatCmd::NO_CMD;
+   boost::any cmd_arg;
+   using Children = typename TagNode::child_list;
+
+   if(vm["list-stats"].as<bool>())
+   {
+      cmd = StatCmd::PRINT_STAT_TYPE;
+      indent(TagNode::depth);
+      using Parent = typename TagNode::parent;
+      std::cout << "(PARENT) Type is = " << TagNode::name
+            << ", parent is " << Parent::name
+            << ", depth is " << TagNode::depth
+            << std::endl;
+   }
+   if(cmd != StatCmd::NO_CMD)
+   {
+      for_each(Children{}, [&](auto tag_node)
+         {
+            using ChildTagNode = decltype(tag_node);
+            using IsParent = typename detail::is_parent<ChildTagNode>;
+            using TheDoCmd = DoCmd<Stat, IsParent::value>;
+            TheDoCmd::template Go<ChildTagNode>(stat, cmd, cmd_arg);
+         });
+   }
 }
 
 template <typename TagNode, typename Stat,
@@ -145,34 +133,35 @@ template <typename TagNode, typename Stat,
    >
 void parse(Stat& stat, std::string& component_name, std::string& user_cmds)
 {
-   std::cout << "IN PARSE PARENT: " << TagNode::name << std::endl;
    if(component_name.empty())
    {
-      // processCommands<TagNode, true>(user_cmds);
+      processCommands<TagNode>(stat, user_cmds);
       return;
    }
 
-   auto component_head_tail = getHeadTail(component_name,'-');
-   auto& head_c = std::get<0>(component_head_tail);
-   auto& tail_c = std::get<1>(component_head_tail);
-   std::cout << "Head = " << head_c << ", tail = " << tail_c << std::endl;
-   if(head_c != TagNode::name)
+   auto child_component_name = component_name;
+   if(TagNode::depth > 0)
    {
-      std::cout << "NO Matches!" << std::endl;
-      return;
-   }
-   std::cout << "Matches!" << std::endl;
-   if(tail_c.empty())
-   {
-      // processCommands<TagNode, true>(user_cmds);
-      return;
+      auto component_head_tail = getHeadTail(component_name,'-');
+      auto& head_c = std::get<0>(component_head_tail);
+      auto& tail_c = std::get<1>(component_head_tail);
+      if(head_c != TagNode::name)
+      {
+         return;
+      }
+      if(tail_c.empty())
+      {
+         processCommands<TagNode>(stat, user_cmds);
+         return;
+      }
+      child_component_name = tail_c;
    }
    using Children = typename TagNode::child_list;
    boost::fusion::for_each(Children{},
-         [&](auto ctag_node)
-         {
-          parse<decltype(ctag_node)>(stat, tail_c, user_cmds);
-         });
+      [&](auto ctag_node)
+      {
+          parse<decltype(ctag_node)>(stat, child_component_name, user_cmds);
+      });
 }
 
 

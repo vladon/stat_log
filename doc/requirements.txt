@@ -1,26 +1,26 @@
-RcStatLog requirements:
+StatLog requirements:
 
 NOTE:
     wfStatus could either be a global variable OR a per "component" (e.g., MAC,
     SIS, etc.) variable.  I'm leaning towards the later because this would allow
     the wfstat utility to disable/enable hexdump, logging (and maybe even the
     stat collection) of particular components.  To do this the client (say
-    MocbAdaptor) would do (on init):
+    SisMgr) would do (on init):
         StatLogComponent wfStatus
-            = statLogger.getWfStatusComponent<MocbAdaptorComponent>();
+            = statLogger.getWfStatusComponent<SisMgrComponent>();
         This would be just a convenience wrapper arround these operations:
-            statLogger.hexDump<MocbAdaptorComponent>(buffer, len, "Identifier");
-            statLogger.getLogger<MocbAdaptorComponent>() << "Some string";
-            statLogger.addStat<MocbAdaptorComponent::MocbStat1Tag>(value);
+            statLogger.hexDump<SisMgrComponent>(buffer, len, "Identifier");
+            statLogger.getLogger<SisMgrComponent>() << "Some string";
+            statLogger.addStat<SisMgrComponent::MocbStat1Tag>(value);
     then operate on the wfStatus (as specified below).
     The wfstat utility could do:
         > ./wfstat --get-registered-components
-            ... MocbAdaptor ...
-        > ./wfstat --disable MocbAdaptor [hexdump|log|stat|all] #the default would be all
+            ... SisMgr ...
+        > ./wfstat --disable SisMgr [hexdump|log|stat|all] #the default would be all
     OR
-        > ./wfstat --enable MocbAdaptor [hexdump|log|stat|all] #the default would be all
+        > ./wfstat --enable SisMgr [hexdump|log|stat|all] #the default would be all
 
-    Here, the name "MocbAdaptor" has been registered at compile time by the user passing
+    Here, the name "SisMgr" has been registered at compile time by the user passing
         this string to the API
     ISSUE: the wfstat application will have to enable/disable per-Component stats/logs
        by writing into the Component's "isEnabled" variable in SHM
@@ -46,7 +46,7 @@ NOTE:
     WfStatLogger should be a generic type that does not depend on all the
     component types.  This way we can avoid recompiling the entire waveform when
     the WfStatLogger.h changes.  In order to make this work, the
-    WfStatLogger.cpp will instantiate the eTDRS-specific layout of shared_memory
+    WfStatLogger.cpp will instantiate the WF-specific layout of shared_memory
     (this file will depend on all the component stat types).
 
 * Pkt HexDump:
@@ -102,7 +102,7 @@ NOTE:
            "addStat" call ... instead we could have a low priority thread that
            will walk these stats and serialize them; this same thread can check
            the sentinals for reset as well.
-        -- Nice if we could zero out stats by their group (say MocbAdaptor, etc).
+        -- Nice if we could zero out stats by their group (say SisMgr, etc).
         -- Could probably use boost::fusion to visit each stat and clear it.
         -- Time-Series stats (similar to OPNET).  Support both "bucket" and
            "all-values."  The user interface would still be the same:
@@ -142,7 +142,7 @@ wfstat interface (uses the WfStatLoggerCtl.cpp)
             shm locations into a temporary buffer (to avoid a race condition).
         NOTE: Each sub-buffer will need to have the fields:
             * logSize (number of valid characters)
-            * seq_number (used to correcly unwrap the log or hexdump)
+            * seq_number (used to correctly unwrap the log or hexdump)
     -- Wf performance stats:
             ./wfstat --stat [<component-name>] #no argument prints all components' stats
             #NOTE: the Time-Series stats will NOT be printed in this way

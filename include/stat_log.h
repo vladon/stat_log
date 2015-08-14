@@ -49,7 +49,6 @@ struct LogStatOperational : detail::LogStatBase<UserStatH, true>
 template <typename UserStatH>
 struct LogStatControl : detail::LogStatBase<UserStatH, false>
 {
-#if 1
    using BaseClass = detail::LogStatBase<UserStatH, false>;
    using TopNode = typename BaseClass::TopNode;
    using TagHierarchy = typename BaseClass::TagHierarchy;
@@ -71,8 +70,6 @@ struct LogStatControl : detail::LogStatBase<UserStatH, false>
       std::cout << "Is parent = " << detail::is_parent<TagHierarchy>::value << std::endl;
       parse<TagHierarchy>(this->theStats, component_str, user_cmd_line);
    }
-#endif
-
 };
 
 }

@@ -168,7 +168,7 @@ namespace detail
          using type = TagNode<T, Parent, Depth::value, child_type_vec>;
       };
 
-   template <typename UserStatH, bool IsOperational>
+   template <typename UserStatDefs, bool IsOperational>
       struct LogStatBase
    {
       struct TopName
@@ -177,7 +177,7 @@ namespace detail
       };
       using TopNode = detail::TagNode<TopName, void, 0>;
 
-      using TagHierarchy = typename detail::GenTagHierarchy<UserStatH, TopNode,
+      using TagHierarchy = typename detail::GenTagHierarchy<UserStatDefs, TopNode,
             std::integral_constant<int, 0> >::type;
       using TheStats = typename boost::fusion::result_of::as_vector<
          typename detail::stat_creator<TagHierarchy, IsOperational>::type>::type;
@@ -186,13 +186,13 @@ namespace detail
       {
          using namespace boost::fusion;
          for_each(theStats, [&shm_ptr](auto& stat)
-               {
+            {
                using StatType = std::remove_reference_t<decltype(stat)>;
                stat.setShmPtr(shm_ptr);
                std::cout << "assignSmPtr to " << TypeId<StatType>{}
-               << std::hex << (long int)shm_ptr << std::endl;
+                  << std::hex << (long int)shm_ptr << std::endl;
                shm_ptr += StatType::SerialType::getSize();
-               });
+            });
 
       }
       TheStats theStats;

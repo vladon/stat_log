@@ -82,8 +82,11 @@ auto& theOpStats = tdrsOpStat.theStats;
 
 int main(int argc, char** argv)
 {
+#if 0
    using TagHierarchy = TdrsOpStat::TagHierarchy;
    std::cout << "The Type = " << TypeId<TagHierarchy>{} << std::endl;
+#endif
+
 
 #if 1
    shared_mem_backend shm_backend;
@@ -104,7 +107,6 @@ int main(int argc, char** argv)
       << getValue<sis_adapt::BlahTag>(tdrsControlStat.theStats) << std::endl;
 
 #endif
-
 
    tdrsControlStat.parseUserCommands(argc, argv);
 

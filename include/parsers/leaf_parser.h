@@ -36,9 +36,10 @@ struct DoCmd<Stat, false>
       using Parent = typename TagNode::parent;
       using Tag = typename TagNode::tag;
       std::cout << "Type is = " << TagNode::name
-         << ", parent is " << Parent::name
-         << ", value is " << getValue<Tag>(stat)
-         << ", depth is " << TagNode::depth
+         << ", parent is " << Parent::name << " ";
+         // << ", value is " << getValue<Tag>(stat)
+      stat.template sendStatCommand<Tag>(cmd, cmd_arg);
+      std::cout  << ", depth is " << TagNode::depth
          // << ", addr is " << std::hex << &getValue<Tag>(theOpStats)
          << std::endl;
    }

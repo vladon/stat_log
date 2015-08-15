@@ -1,12 +1,14 @@
 #pragma once
 #include "fusion_includes.h"
+//TODO: generalize backend types
+#include "backends/shared_mem_backend.h"
+#include "loggers/logger_common.h"
+#include "stats/stats_common.h"
+#include <memory>
 
 #define NAME static constexpr const char* name
 namespace stat_log
 {
-
-template <typename T, bool IsOperational>
-struct stat_traits;
 
 namespace detail
 {
@@ -17,43 +19,57 @@ namespace detail
       typedef void type;
    };
 
-   template <typename Tag, typename MatchingTags, bool IsOperational>
-   struct GenericStat
+
+   template <typename Tag, typename MatchingTags>
+   struct GenericLogger
    {
-      void setShmPtr(void* shm_ptr)
+      void setSharedPtr(void* ptr)
       {
-         theProxy.setShmPtr(shm_ptr);
+         theProxy.setSharedPtr(ptr);
       }
-      using SerialType = typename stat_traits<Tag, IsOperational>::SerialType;
-      using Proxy = typename stat_traits<Tag, IsOperational>::ProxyType;
+      using Proxy = LogProxy<LogControlWord>;
+      //theProxy is use to both
+      // 1. Set the log level (control) AND
+      // 2. Check the current log level (operational)
       Proxy theProxy;
       using matching_tags = MatchingTags;
-
-      auto& getValue()
-      {
-         return this->theProxy.getValue();
-      }
+      static constexpr bool IsParent = true;
    };
 
    template <typename Tag, typename MatchingTags>
-      struct GenericOpStat : GenericStat<Tag, MatchingTags, true>
+   struct GenericStat
+   {
+      using matching_tags = MatchingTags;
+      static constexpr bool IsParent = false;
+   };
+
+   template <typename Tag, typename MatchingTags>
+      struct GenericOpStat : GenericStat<Tag, MatchingTags>
    {
       template <typename... Args>
-         void writeVal(Args... args)
-         {
-            this->theProxy.write(args...);
-         }
+      void writeVal(Args... args)
+      {
+         this->theProxy.write(args...);
+      }
 
-      using BaseClass = GenericStat<Tag, MatchingTags, true>;
-      using SerialType = typename BaseClass::SerialType;
+      void setSharedPtr(void* ptr)
+      {
+         theProxy.setSharedPtr(ptr);
+      }
+      using Proxy = OperationalStatProxy<typename stat_traits<Tag>::StatType>;
+      Proxy theProxy;
    };
 
 
    template <typename Tag, typename MatchingTags>
-      struct GenericControlStat : GenericStat<Tag, MatchingTags, false>
+      struct GenericControlStat : GenericStat<Tag, MatchingTags>
    {
-      using BaseClass = GenericStat<Tag, MatchingTags, false>;
-      using SerialType = typename BaseClass::SerialType;
+      void setSharedPtr(void* ptr)
+      {
+         theProxy.setSharedPtr(ptr);
+      }
+      using Proxy = ControlStatProxy<typename stat_traits<Tag>::StatType>;
+      Proxy theProxy;
    };
 
    ///////////////
@@ -82,7 +98,7 @@ namespace detail
                IsOpType::value,
                GenericOpStat<ThisTag, matching_tags>,
                GenericControlStat<ThisTag, matching_tags>
-               >;
+            >;
          //Finally add this statistic to the global tag vec
          using type = typename mpl::push_back<GlobalTagVec, this_stat>::type;
       };
@@ -90,19 +106,23 @@ namespace detail
    template <typename GlobalTagVec, typename ParentVec,
              typename TagHierarchy , typename IsOpType
              >
-
       struct stat_creator_helper
       {
 
          using ThisLineage = typename mpl::push_back<ParentVec,
                typename TagHierarchy::tag>::type;
          using ChildTagHierarchy = typename TagHierarchy::child_list;
+         using ThisTag = typename TagHierarchy::tag;
+         using this_logger = GenericLogger<ThisTag, ThisLineage>;
 
-         // _1 == GlobalTagVec
+         using UpdatedGlobalTagVec = typename mpl::push_back<
+            GlobalTagVec, this_logger>::type;
+
+         // _1 == UpdatedGlobalTagVec
          // _2 == the iterator to the child TagNode
          using type = typename mpl::fold<
                ChildTagHierarchy,
-               GlobalTagVec,
+               UpdatedGlobalTagVec,
                mpl::eval_if<
                   is_parent<mpl::_2>,
                   stat_creator_helper<
@@ -168,7 +188,8 @@ namespace detail
          using type = TagNode<T, Parent, Depth::value, child_type_vec>;
       };
 
-   template <typename UserStatDefs, bool IsOperational>
+   template <typename UserStatDefs, bool IsOperational,
+            typename Logger>
       struct LogStatBase
    {
       struct TopName
@@ -182,35 +203,71 @@ namespace detail
       using TheStats = typename boost::fusion::result_of::as_vector<
          typename detail::stat_creator<TagHierarchy, IsOperational>::type>::type;
 
-      void assignShmPtr(char* shm_ptr)
+      //Creates a single shared memory block that will store:
+      //  -- The serialization for each stat.
+      //  -- The control block for each stat (this will be
+      //     used to signal per-stat behavior -- e.g., clear
+      //     disable, etc.).
+      //  -- The control block for each parent (this will be
+      //     used to set the log level for both the normal logging
+      //     AND the hex dumps).
+      //1. Control Block
+      //2. Stat Block
+      void init()
       {
+         size_t total_shm_size = 0;
          using namespace boost::fusion;
-         for_each(theStats, [&shm_ptr](auto& stat)
-            {
-               using StatType = std::remove_reference_t<decltype(stat)>;
-               stat.setShmPtr(shm_ptr);
-               std::cout << "assignSmPtr to " << TypeId<StatType>{}
-                  << std::hex << (long int)shm_ptr << std::endl;
-               shm_ptr += StatType::SerialType::getSize();
-            });
+         for_each(theStats, [&total_shm_size](auto& stat)
+         {
+            using StatType = std::remove_reference_t<decltype(stat)>;
 
+#if 0
+            std::cout << "TYPE =  " << TypeId<StatType>{}
+            << "\n\t SHARED_SIZE = " << StatType::Proxy::getSharedSize()
+            << std::endl;
+#endif
+
+            total_shm_size += StatType::Proxy::getSharedSize();
+         });
+         shm_backend.setParams("ROB", total_shm_size, IsOperational);
+         auto shm_start = shm_backend.getMemoryPtr();
+         std::cout << std::dec <<  "SHM size = " << total_shm_size
+            <<" , shm_start = " << std::hex << (long int)shm_start << std::endl;
+         auto shm_ptr = shm_start;
+
+         //Next, need to inform tdrsOpStat of the start of shared_memory
+         for_each(theStats, [&shm_ptr](auto& stat)
+         {
+            using StatType = std::remove_reference_t<decltype(stat)>;
+            stat.setSharedPtr(shm_ptr);
+#if 0
+            std::cout << "assignSmPtr to " << TypeId<StatType>{}
+            << std::hex << (long int)shm_ptr << std::endl;
+#endif
+            shm_ptr += StatType::Proxy::getSharedSize();
+         });
       }
+
+
+      std::shared_ptr<Logger> theLogger;
       TheStats theStats;
+      shared_mem_backend shm_backend;
    };
-}
-template<typename Tag, typename T>
-auto getStatHandleView(T& stats)
-{
-   return boost::fusion::filter_view<T, detail::matches_tag<Tag>>(stats);
-}
+
+   template<typename Tag, typename T>
+      auto getStatHandleView(T& stats)
+      {
+         return boost::fusion::filter_view<T, detail::matches_tag<Tag>>(stats);
+      }
 
    template <typename Tag, typename T>
-auto& getValue(T& stats)
-{
-   using namespace boost::fusion;
-   auto statHdlView = getStatHandleView<Tag>(stats);
-   static_assert(result_of::size<decltype(statHdlView)>::value == 1,
-         "getValues requires a Leaf Tag!");
-   return deref(begin(statHdlView)).getValue();
+      auto& getValue(T& stats)
+      {
+         auto statHdlView = getStatHandleView<Tag>(stats);
+         static_assert(
+               boost::fusion::result_of::size<decltype(statHdlView)>::value == 1,
+               "getValues requires a Leaf Tag!");
+         return deref(begin(statHdlView)).getValue();
+      }
 }
 }

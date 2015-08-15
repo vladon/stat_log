@@ -15,6 +15,14 @@ struct DoCmd<Stat, true>
    static void Go(Stat& stat, StatCmd cmd, boost::any& cmd_arg)
    {
       using Children = typename TagNode::child_list;
+      detail::indent(TagNode::depth);
+      using Parent = typename TagNode::parent;
+      using Tag = typename TagNode::tag;
+      std::cout << "(PARENT) Type is = " << TagNode::name
+         << ", parent is " << Parent::name
+         << ", depth is " << TagNode::depth
+         // << ", addr is " << std::hex << &getValue<Tag>(theOpStats)
+         << std::endl;
       for_each(Children{}, [&](auto tag_node)
          {
             using ChildTagNode = decltype(tag_node);

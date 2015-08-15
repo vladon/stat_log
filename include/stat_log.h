@@ -2,54 +2,39 @@
 #include "fusion_includes.h"
 #include "util/stat_log_impl.h"
 #include "parsers/parent_parser.h"
+#include "stats/stats_common.h"
 
 #include <boost/algorithm/string/join.hpp>
+#include <boost/any.hpp>
 
 namespace stat_log
 {
 
-
-template <int N, typename T>
-struct StatTable
+template <typename UserStatH, typename Logger>
+struct LogStatOperational : detail::LogStatBase<UserStatH, true, Logger>
 {
-
-};
-
-//Operational proxies
-struct OpProxyBasic
-{
-   int* serial_ptr = nullptr;
-   void setShmPtr(void* ptr)
+   //TODO: add
+   // logDebug, logInfo ...
+   template <typename StatTag, typename... Args>
+   void writeStat(Args... args)
    {
-      serial_ptr = reinterpret_cast<int*>(ptr);
-   }
-
-   void write(int i)
-   {
-      (*serial_ptr) += i;
-   }
-
-   //TODO: temporary
-   auto& getValue()
-   {
-      return (*serial_ptr);
+      using namespace boost::fusion;
+      auto statHdlView = detail::getStatHandleView<StatTag>(this->theStats);
+      static_assert(result_of::size<decltype(statHdlView)>::value == 1,
+            "Too many matching tags in writeStat!");
+      auto& stat_hdl = deref(begin(statHdlView));
+      using StatHdlType = std::remove_reference_t<decltype(stat_hdl)>;
+      static_assert(
+            StatHdlType::IsParent == false,
+            "Require a leaf node for writeStat!");
+      stat_hdl.theProxy.write(args...);
    }
 };
 
-
-//Observer/Control proxies
-//TODO:
-//
-
-template <typename UserStatH>
-struct LogStatOperational : detail::LogStatBase<UserStatH, true>
+template <typename UserStatH, typename Logger>
+struct LogStatControl : detail::LogStatBase<UserStatH, false, Logger>
 {
-};
-
-template <typename UserStatH>
-struct LogStatControl : detail::LogStatBase<UserStatH, false>
-{
-   using BaseClass = detail::LogStatBase<UserStatH, false>;
+   using BaseClass = detail::LogStatBase<UserStatH, false, Logger>;
    using TopNode = typename BaseClass::TopNode;
    using TagHierarchy = typename BaseClass::TagHierarchy;
 
@@ -66,11 +51,31 @@ struct LogStatControl : detail::LogStatBase<UserStatH, false>
       std::cout << "User cmd line = " << user_cmd_line << std::endl;
       std::string component_str = getComponentName(user_cmd_line);
       std::cout << "COMPONENT = " << component_str << std::endl;
+      parse<TagHierarchy>(*this, component_str, user_cmd_line);
+   }
 
-      std::cout << "Is parent = " << detail::is_parent<TagHierarchy>::value << std::endl;
-      parse<TagHierarchy>(this->theStats, component_str, user_cmd_line);
+   template <typename StatTag>
+   void sendStatCommand(StatCmd cmd, boost::any& cmd_arg)
+   {
+      using namespace boost::fusion;
+      auto statHdlView = detail::getStatHandleView<StatTag>(this->theStats);
+      static_assert(result_of::size<decltype(statHdlView)>::value == 1,
+            "Too many matching tags in sendStatCommand!");
+      auto& stat_hdl = deref(begin(statHdlView));
+      using StatHdlType = std::remove_reference_t<decltype(stat_hdl)>;
+      static_assert(//decltype(stat_hdl)::IsParent == false,
+            StatHdlType::IsParent == false,
+            "Require a leaf node for sendStatCommand!");
+      stat_hdl.theProxy.doStatCommand(cmd, cmd_arg);
    }
 };
+
+template <typename Stat>
+auto& getStatSingleton()
+{
+   static Stat theStat;
+   return theStat;
+}
 
 }
 

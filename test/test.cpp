@@ -1,5 +1,7 @@
 #include "stat_log.h"
 #include "backends/shared_mem_backend.h"
+#include "stats/stats_common.h"
+#include "stats/simple_counter.h"
 
 #include <iostream>
 #include <vector>
@@ -42,24 +44,17 @@ struct etdrs_stats
 namespace stat_log
 {
 
-   template <typename Repr>
-   struct Wrapper
-   {
-      static constexpr size_t getSize()
-      {
-         return sizeof(Repr);
-      }
-      Repr storage;
-   };
-
-   template <typename T, bool IsOperational>
+#if 1
+   template <typename Tag>
    struct stat_traits
    {
-      using SerialType = Wrapper<int>;
-      using ProxyType = OpProxyBasic;
+      using StatType = SimpleCounter<int>;
    };
+#endif
+
 
 #if 0
+
    template<>
       struct stat_trait<CorrScoreTag>
       {
@@ -73,12 +68,10 @@ namespace stat_log
    // that will react to user inputs (clear, view stat, etc).
 }
 
-using TdrsOpStat = LogStatOperational<etdrs_stats>;
-TdrsOpStat tdrsOpStat;
-using TdrsControlStat = LogStatControl<etdrs_stats>;
-TdrsControlStat tdrsControlStat;
+struct MyLogger {};
 
-auto& theOpStats = tdrsOpStat.theStats;
+using TdrsOpStat = LogStatOperational<etdrs_stats, MyLogger>;
+using TdrsControlStat = LogStatControl<etdrs_stats, MyLogger>;
 
 int main(int argc, char** argv)
 {
@@ -86,28 +79,14 @@ int main(int argc, char** argv)
    using TagHierarchy = TdrsOpStat::TagHierarchy;
    std::cout << "The Type = " << TypeId<TagHierarchy>{} << std::endl;
 #endif
+   auto& tdrsOpStat = getStatSingleton<TdrsOpStat>();
+   tdrsOpStat.init();
+   auto& tdrsControlStat = getStatSingleton<TdrsControlStat>();
+   tdrsControlStat.init();
 
-
-#if 1
-   shared_mem_backend shm_backend;
-   shm_backend.setParams("ROB", sizeof(theOpStats));
-   auto shm_start = shm_backend.getMemoryPtr();
-   std::cout << "SHM size = " << sizeof(theOpStats)
-      <<" , shm_start = " << std::hex << shm_start << std::endl;
-
-   //Next, need to inform tdrsOpStat of the start of shared_memory
-   tdrsOpStat.assignShmPtr(shm_start);
-   tdrsControlStat.assignShmPtr(shm_start);
-
-   getValue<sis_adapt::BlahTag>(theOpStats) = 42;
-   getValue<sis_adapt::NodeStatsTag::RxCountTag>(theOpStats) = 38;
-   std::cout <<  getValue<sis_adapt::BlahTag>(theOpStats) << std::endl;
-
-   std::cout <<  "OPERATIONAL value = "
-      << getValue<sis_adapt::BlahTag>(tdrsControlStat.theStats) << std::endl;
-
-#endif
+   tdrsOpStat.writeStat<sis_adapt::BlahTag>(88);
 
    tdrsControlStat.parseUserCommands(argc, argv);
 
+   return 0;
 }

@@ -1,5 +1,5 @@
 #pragma once
-#include "stats/stats_common.h"
+#include "stat_log/stats/stats_common.h"
 namespace stat_log
 {
    using LogControlWord = uint32_t;

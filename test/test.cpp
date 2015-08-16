@@ -1,7 +1,7 @@
-#include "stat_log.h"
-#include "backends/shared_mem_backend.h"
-#include "stats/stats_common.h"
-#include "stats/simple_counter.h"
+#include "stat_log/stat_log.h"
+#include "stat_log/backends/shared_mem_backend.h"
+#include "stat_log/stats/stats_common.h"
+#include "stat_log/stats/simple_counter.h"
 
 #include <iostream>
 #include <vector>

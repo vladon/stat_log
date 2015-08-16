@@ -1,8 +1,8 @@
 #pragma once
-#include "fusion_includes.h"
-#include "util/stat_log_impl.h"
-#include "parsers/parent_parser.h"
-#include "stats/stats_common.h"
+#include "stat_log/fusion_includes.h"
+#include "stat_log/util/stat_log_impl.h"
+#include "stat_log/parsers/parent_parser.h"
+#include "stat_log/stats/stats_common.h"
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/any.hpp>

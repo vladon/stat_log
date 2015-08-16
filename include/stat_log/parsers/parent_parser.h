@@ -1,8 +1,8 @@
 #pragma once
 
-#include "parsers/parser_common.h"
-#include "parsers/leaf_parser.h"
-#include "util/utils.h"
+#include "stat_log/parsers/parser_common.h"
+#include "stat_log/parsers/leaf_parser.h"
+#include "stat_log/util/utils.h"
 
 namespace stat_log
 {

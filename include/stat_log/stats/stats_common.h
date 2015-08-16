@@ -1,5 +1,5 @@
 #pragma once
-#include "parsers/parser_common.h"
+#include "stat_log/parsers/parser_common.h"
 #include <boost/any.hpp>
 
 namespace stat_log

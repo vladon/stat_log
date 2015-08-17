@@ -1,10 +1,9 @@
 stat_log
 ========
 
-This library is an extensible C++ library for logging and statistic collection. I got the idea for this after
-"reinventing the wheel" on several projects at work; each time i was either forced to use a pre-existing solution in the
-code-base I was maintaining or roll my own.  At last, I decided that I would create a re-usable library with the
-following top-level requirements:
+stat_log is an extensible C++ library for logging and statistic collection. I got the idea for this after
+"reinventing the wheel" on several projects at work.  I finally decided that I would create a re-usable 
+library with the following top-level requirements:
 
 1. _The user shall be able to define a hierarchy of statistics at compile time_. From the perspective of the user, the
    purpose of this hierarchy is to simply organize the statistics.  For example, suppose the user is writing software
@@ -20,8 +19,10 @@ following top-level requirements:
       * Collecting per neighbor wireless link statistics (drops, average snr, etc.) for the purpose of optimizing the spectral  
         deconfliction protocol. 
   * **Hardware Interface**:  This component is responsible for interfacing with the hardware (e.g., an FPGA) that is
-    responsible for doing the wireless signal processing. Given this (highly simplified) design, the user may define
-    the following statistic hierarchy:
+    responsible for doing the wireless signal processing. 
+    
+   Given this (highly simplified) design, the user may define the following statistic hierarchy:
+
   ```cpp
   MAC{
     IP_PKTS_DOWN,
@@ -35,13 +36,12 @@ following top-level requirements:
     PER_NBR_SNR,
     PER_NBR_LINK_STATUS
   }
-  HW_INTERFACE
-  {
+  HW_INTERFACE{
      MISC_FPGA_FAULT,
      BUFFER_OVERFLOW
   }
   ```
-  Note this hierachy allows the user to reuse the "BUFFER_OVERFLOW" statistic name.
+  Note this hierarchy allows the user to reuse the "BUFFER_OVERFLOW" statistic name.
   
 2. _Extremely simple mechanism for updating statistics.  Furthermore, this mechanism should be completely agnostic to
    the details of what statistical values are to reported._  Here is one candidate interface which meets this
@@ -66,7 +66,7 @@ following top-level requirements:
   flowing down into the MAC layer.  To do this we can setup a mapping (using template magic I discuss later) between the
   MAC::IP_PKTS_DOWN tag and a "Simple Counter" statistic.  During the application debugging phase, however, we realize
   that such a simple statistic is not rich enough for troubleshooting purposes.  To this end, we can re-map the
-  MAC::IP_PKTS_DOWN tag to a "Time-Series" statistic; this statisic may, for example, store time-stamped values in a
+  MAC::IP_PKTS_DOWN tag to a "Time-Series" statistic; this statistic may, for example, store time-stamped values in a
   buffer that can be graphed at a later time.  
   
   Whichever statistic we end up using, the statistic generating site would remain the same:
@@ -75,7 +75,8 @@ following top-level requirements:
   ```
   (A re-compile is necessary to switch the statistic type, however.)
   
-3. Clean separation from "Operational" and "Control and/or Observational" modes
+3. _Clean separation from "Operational" and "Control and/or Observational" modes._
 
-TODO: work in progress (i welcome feedback even at this early stage)
+TODO: work in progress (I welcome feedback even at this early stage)
+
 

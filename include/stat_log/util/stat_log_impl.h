@@ -229,13 +229,14 @@ namespace detail
 
             total_shm_size += StatType::Proxy::getSharedSize();
          });
-         shm_backend.setParams("ROB", total_shm_size, IsOperational);
+         shm_backend.setParams("stat_log_stat_ctrl", total_shm_size, IsOperational);
          auto shm_start = shm_backend.getMemoryPtr();
          std::cout << std::dec <<  "SHM size = " << total_shm_size
             <<" , shm_start = " << std::hex << (long int)shm_start << std::endl;
          auto shm_ptr = shm_start;
 
-         //Next, need to inform tdrsOpStat of the start of shared_memory
+         //Next, need to inform each node theStats about its location
+         // in shared memory
          for_each(theStats, [&shm_ptr](auto& stat)
          {
             using StatType = std::remove_reference_t<decltype(stat)>;

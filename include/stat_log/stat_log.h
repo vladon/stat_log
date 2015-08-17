@@ -121,11 +121,11 @@ auto& getStatSingleton()
          NAME = BOOST_PP_STRINGIZE(elem); \
             };
 
-#if 1
+#define MAKE_STAT_TAG_STRUCT(stat_name) \
+   _MAKE_STAT_TAG_STRUCT(~, _TAG, stat_name)
+
 #define MAKE_STAT_TAGS(args) \
-      BOOST_PP_SEQ_FOR_EACH (_MAKE_STAT_TAG_STRUCT, Tag, args) \
+      BOOST_PP_SEQ_FOR_EACH (_MAKE_STAT_TAG_STRUCT, _TAG, args) \
    using ChildTypes = boost::fusion::vector<BOOST_PP_SEQ_ENUM(\
-         BOOST_PP_SEQ_TRANSFORM(_MAKE_STAT_TAG, Tag, args))>;
-#else
-#endif
+         BOOST_PP_SEQ_TRANSFORM(_MAKE_STAT_TAG, _TAG, args))>;
 

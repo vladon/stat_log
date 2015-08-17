@@ -80,3 +80,4 @@ following top-level requirements:
 
 TODO: work in progress (i welcome feedback even at this early stage)
 
+![Test Image](doc/smiley.png)

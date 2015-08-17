@@ -44,10 +44,8 @@ struct ControlStatProxy : detail::StatProxyBase<StatType>
    }
 };
 
-#if 1
-template <typename Tag>
+template <typename Tag, class Enable = void>
 struct stat_traits;
-#endif
 
    /* Example:
       template <typename Tag>

@@ -213,7 +213,7 @@ namespace detail
       //     AND the hex dumps).
       //1. Control Block
       //2. Stat Block
-      void init()
+      void init(const std::string& shm_name)
       {
          size_t total_shm_size = 0;
          using namespace boost::fusion;
@@ -229,7 +229,7 @@ namespace detail
 
             total_shm_size += StatType::Proxy::getSharedSize();
          });
-         shm_backend.setParams("stat_log_stat_ctrl", total_shm_size, IsOperational);
+         shm_backend.setParams(shm_name, total_shm_size, IsOperational);
          auto shm_start = shm_backend.getMemoryPtr();
          std::cout << std::dec <<  "SHM size = " << total_shm_size
             <<" , shm_start = " << std::hex << (long int)shm_start << std::endl;

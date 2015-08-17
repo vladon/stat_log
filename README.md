@@ -25,19 +25,21 @@ library with the following top-level requirements:
 
   ```cpp
   MAC{
-    IP_PKTS_DOWN,
-    IP_PKTS_UP,
+    IP_PKTS_DOWN
+    IP_PKTS_UP
     BUFFER_OVERFLOW
   }
   SIS{
     MAC_PKTS_DOWN
     MAC_PKTS_UP
-    PER_NBR_DROPS
-    PER_NBR_SNR,
-    PER_NBR_LINK_STATUS
+    PER_NBR_STATS{
+      LINK_QUALITY
+      RECEIVE_STATUS
+      LINK_STATUS
+    }
   }
   HW_INTERFACE{
-     MISC_FPGA_FAULT,
+     MISC_FPGA_FAULT
      BUFFER_OVERFLOW
   }
   ```
@@ -53,12 +55,12 @@ library with the following top-level requirements:
   Or for single dimensioned statistics:
   
   ```cpp
-  statLog.addStat<SIS::PER_NBR_SNR>(nbrId, thisSnrValue);
+  statLog.addStat<SIS::PER_NBR_STATS::LINK_QUALITY>.addStat(nbrId, thisLinkQuality);
   ```
   Or for multi-dimensioned statistics:
   
    ```cpp
-  statLog.addStat<SIS::PER_NBR_LINK_STATUS>(nbrId, LINK_TYPE_SYMMETRIC, 1);
+  statLog.addStat<SIS::PER_NBR_STATS::LINK_STATUS>(nbrId, LINK_TYPE_SYMMETRIC, 1);
   ```
   etc.
   
@@ -75,7 +77,22 @@ library with the following top-level requirements:
   ```
   (A re-compile is necessary to switch the statistic type, however.)
   
-3. _Clean separation from "Operational" and "Control and/or Observational" modes._
+  See [Stats](doc/statistic_types.md) for a list of statistic types provided by the stat\_log library _and_ documentation on how to create your own.
+  
+  
+3. _Clean separation between statistic "Generation" and "Control/Observational" modes._  By "Generation" I am referring to the mechanism by which the stastics are recorded/updated in your running application.  By "Control/Observational" I am referring to the mechanism for viewing the statistics or otherwise controlling statistic behavior (e.g. clearing a statistic).  For example, we could have the Generation mode dump statistics to shared memory and this shared memory can be read by another application application (running in Control/Observational mode).  I have chosen this route in my implementation.  For more details see [Statistic Control Application](doc/stat_control_app.md).
+
+4. _Support logging capability._   The application should be able to add a log entry by doing:
+  ```cpp
+  statLog.logInfo<MAC>() << "Received nbr discovery message from nbr " << nbrId;
+  ```
+  Or
+  ```cpp
+  statLog.logError<HW_INTERFACE>() << "FPGA fault : " << faultValue;
+  ```
+  Node the use of the tags: ```MAC ``` and ```HW_INTERFACE.```  This allows the Statistic Control Application to enable  logging by application _component_ in addition to log level (e.g. Debug, Info, Error and Fatal).
+  
+
 
 TODO: work in progress (I welcome feedback even at this early stage)
 

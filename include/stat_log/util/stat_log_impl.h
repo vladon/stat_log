@@ -1,12 +1,12 @@
 #pragma once
 #include "stat_log/fusion_includes.h"
 //TODO: generalize backend types
+#include "stat_log/defs.h"
 #include "stat_log/backends/shared_mem_backend.h"
 #include "stat_log/loggers/logger_common.h"
 #include "stat_log/stats/stats_common.h"
 #include <memory>
 
-#define NAME static constexpr const char* name
 namespace stat_log
 {
 

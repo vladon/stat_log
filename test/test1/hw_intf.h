@@ -1,4 +1,6 @@
 #pragma once
+#include "hw_intf_stat_tags.h"
+
 #include "stat_log/stat_log.h"
 #include "stat_log/backends/shared_mem_backend.h"
 #include "stat_log/stats/stats_common.h"
@@ -6,17 +8,6 @@
 #include "stat_log/loggers/shared_memory_logger.h"
 
 
-struct HwIntfBase {};
-
-struct HW_INTERFACE
-{
-   NAME = "HW_INTERFACE";
-   MAKE_STAT_TAGS_NAMED_BASE(
-      HwIntfBase,
-      (MISC_FPGA_FAULT)
-      (BUFFER_OVERFLOW)
-   )
-};
 namespace stat_log
 {
 

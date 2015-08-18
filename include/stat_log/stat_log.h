@@ -7,11 +7,17 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/any.hpp>
 
+#include <thread>
+#include <chrono>
+
 namespace stat_log
 {
 
 template <typename UserStatH, typename Logger>
-struct LogStatOperational : detail::LogStatBase<UserStatH, true, Logger>
+struct LogStatOperational :
+   detail::LogStatBase<
+      UserStatH, true, Logger, LogStatOperational<UserStatH, Logger>
+   >
 {
    //TODO: add
    // logDebug, logInfo ...
@@ -29,12 +35,52 @@ struct LogStatOperational : detail::LogStatBase<UserStatH, true, Logger>
             "Require a leaf node for writeStat!");
       stat_hdl.theProxy.write(args...);
    }
+
+   //This method will be called by the base class once it is done with
+   // its init().
+   //TODO: I would really like this method to be private because
+   // the user should NOT call it directly.  The problem is
+   // i still need the base class to call it...
+   //TODO: The creation of this thread should either be a policy
+   // OR we should do a compile-time check for any stats requiring
+   // deferred serialization, and if there are any, THEN start
+   // the thread.
+   void doInit()
+   {
+      serialization_thread = std::thread([this]()
+      {
+         serializer_running = true;
+         while(serializer_running)
+         {
+            for_each(this->theStats, [](auto &stat)
+            {
+               stat.doSerialize();
+            });
+            std::this_thread::sleep_for(std::chrono::seconds{1});
+         }
+      });
+   }
+
+   void doStop()
+   {
+      if(serializer_running == false)
+         return;
+      serializer_running = false;
+      serialization_thread.join();
+   }
+
+   std::thread serialization_thread;
+   bool serializer_running = false;
 };
 
 template <typename UserStatH, typename Logger>
-struct LogStatControl : detail::LogStatBase<UserStatH, false, Logger>
+struct LogStatControl :
+   detail::LogStatBase<
+      UserStatH, false, Logger, LogStatControl<UserStatH, Logger>
+   >
 {
-   using BaseClass = detail::LogStatBase<UserStatH, false, Logger>;
+   using BaseClass = detail::LogStatBase<
+      UserStatH, false, Logger, LogStatControl<UserStatH, Logger>>;
    using TopNode = typename BaseClass::TopNode;
    using TagHierarchy = typename BaseClass::TagHierarchy;
 
@@ -67,6 +113,12 @@ struct LogStatControl : detail::LogStatBase<UserStatH, false, Logger>
             "Require a leaf node for sendStatCommand!");
       stat_hdl.theProxy.doStatCommand(cmd, cmd_arg);
    }
+
+   void doInit()
+   {}
+
+   void doStop()
+   {}
 };
 
 template <typename Stat>

@@ -18,4 +18,10 @@ namespace stat_log
             << (unsigned long int)*shared_ptr << " ";
       }
    };
+
+   template <typename Repr>
+   struct is_serialization_deferred<SimpleCounter<Repr>>
+   {
+      static constexpr bool value = false;
+   };
 }

@@ -1,9 +1,30 @@
 #pragma once
 #include "stat_log/parsers/parser_common.h"
 #include <boost/any.hpp>
+#include <type_traits>
 
 namespace stat_log
 {
+template <typename Tag, class Enable = void>
+struct stat_tag_to_type;
+/* Example:
+   template <typename Tag>
+   struct stat_tag_to_type;
+   {
+      using type = SimpleCounter<int>;
+   };
+*/
+
+//TODO: Should the stat_log library provide a default
+// stat type?
+
+template <typename StatType>
+struct is_serialization_deferred
+{
+   static constexpr bool value = false;
+};
+
+
 namespace detail
 {
    template <typename StatType>
@@ -24,6 +45,27 @@ namespace detail
    };
 }
 
+template <typename StatType,
+   typename std::enable_if<
+      true == is_serialization_deferred<StatType>::value
+   >::type* = nullptr
+>
+void doSerializeStat(StatType& stat, void* ptr)
+{
+   stat.serialize(ptr);
+}
+
+template <typename StatType,
+   typename = std::enable_if_t<
+      false == is_serialization_deferred<StatType>::value
+   >
+>
+void doSerializeStat(StatType& stat, void* ptr)
+{
+   //Do nothing if this stat does not require
+   // deferred serialization.
+}
+
 template <typename StatType>
 struct OperationalStatProxy : detail::StatProxyBase<StatType>
 {
@@ -31,6 +73,11 @@ struct OperationalStatProxy : detail::StatProxyBase<StatType>
    void write(Args... args)
    {
       this->statHandler.write(this->shared_ptr, args...);
+   }
+
+   void serialize()
+   {
+      doSerializeStat(this->statHandler, this->shared_ptr);
    }
 };
 
@@ -44,17 +91,4 @@ struct ControlStatProxy : detail::StatProxyBase<StatType>
    }
 };
 
-template <typename Tag, class Enable = void>
-struct stat_traits;
-
-   /* Example:
-      template <typename Tag>
-      struct stat_traits;
-      {
-         using StatType = SimpleCounter<int>;
-      };
-   */
-
-   //TODO: Should the stat_log library provide a default
-   // stat trait?
 }

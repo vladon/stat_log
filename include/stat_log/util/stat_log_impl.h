@@ -27,6 +27,11 @@ namespace detail
       {
          theProxy.setSharedPtr(ptr);
       }
+
+      void doSerialize()
+      {
+      }
+
       using Proxy = LogProxy<LogControlWord>;
       //theProxy is use to both
       // 1. Set the log level (control) AND
@@ -56,8 +61,14 @@ namespace detail
       {
          theProxy.setSharedPtr(ptr);
       }
-      using Proxy = OperationalStatProxy<typename stat_traits<Tag>::StatType>;
+      using Proxy = OperationalStatProxy<typename stat_tag_to_type<Tag>::type>;
       Proxy theProxy;
+
+      void doSerialize()
+      {
+         // std::cout << "TYPE =  " << TypeId<Tag>{} << std::endl;
+         theProxy.serialize();
+      }
    };
 
 
@@ -68,8 +79,12 @@ namespace detail
       {
          theProxy.setSharedPtr(ptr);
       }
-      using Proxy = ControlStatProxy<typename stat_traits<Tag>::StatType>;
+      using Proxy = ControlStatProxy<typename stat_tag_to_type<Tag>::type>;
       Proxy theProxy;
+
+      void doSerialize()
+      {
+      }
    };
 
    ///////////////
@@ -189,7 +204,7 @@ namespace detail
       };
 
    template <typename UserStatDefs, bool IsOperational,
-            typename Logger>
+            typename Logger, typename Derived>
       struct LogStatBase
    {
       struct TopName
@@ -220,13 +235,6 @@ namespace detail
          for_each(theStats, [&total_shm_size](auto& stat)
          {
             using StatType = std::remove_reference_t<decltype(stat)>;
-
-#if 0
-            std::cout << "TYPE =  " << TypeId<StatType>{}
-            << "\n\t SHARED_SIZE = " << StatType::Proxy::getSharedSize()
-            << std::endl;
-#endif
-
             total_shm_size += StatType::Proxy::getSharedSize();
          });
          shm_backend.setParams(shm_name, total_shm_size, IsOperational);
@@ -241,12 +249,15 @@ namespace detail
          {
             using StatType = std::remove_reference_t<decltype(stat)>;
             stat.setSharedPtr(shm_ptr);
-#if 0
-            std::cout << "assignSmPtr to " << TypeId<StatType>{}
-            << std::hex << (long int)shm_ptr << std::endl;
-#endif
             shm_ptr += StatType::Proxy::getSharedSize();
          });
+
+         static_cast<Derived*>(this)->doInit();
+      }
+
+      void stop()
+      {
+         static_cast<Derived*>(this)->doStop();
       }
 
 

@@ -38,42 +38,12 @@ namespace stat_log
 {
 
    template <typename Tag>
-   struct stat_traits<Tag>
+   struct stat_tag_to_type<Tag>
    {
-      using StatType = SimpleCounter<int>;
+      using type = SimpleCounter<int>;
    };
 }
-
-
-//TODO
-#if 0
-namespace stat_log
-{
-
-   template <typename Tag>
-      struct stat_traits<Tag, typename std::enable_if<
-      std::is_base_of<HwIntfBase, Tag>::value
-      >::type
-      >
-      {
-         using StatType = SimpleCounter<char>;
-      };
-}
-
-//TODO: threading vs no-threaded policy
-//
-namespace stat_log
-{
-
-   template <typename Tag>
-   struct stat_traits<Tag, typename std::enable_if<
-      std::is_base_of<MacSisBase, Tag>::value
-      >::type
-   >
-   {
-      using StatType = SimpleCounter<int>;
-   };
-}
-#endif
 
 LoggerType& getLoggerRef();
+
+#define STAT_LOG_SHM_NAME "stat_log"

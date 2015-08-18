@@ -1,5 +1,14 @@
 #include "common.h"
+
 constexpr bool IsOperational = false;
+
+template <>
+void initializeStatistics<IsOperational>()
+{
+   //TODO: pass the logger to init()
+   stat_log::getStatSingleton<ControlStatHwIntf>().init(STAT_LOG_HW_INTF_SHM_NAME);
+   stat_log::getStatSingleton<ControlStatMacSis>().init(STAT_LOG_MAC_SIS_SHM_NAME);
+}
 
 using namespace stat_log;
 

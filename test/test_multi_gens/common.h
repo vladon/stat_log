@@ -36,22 +36,23 @@ namespace stat_log
 {
 
    template <typename Tag>
-   struct stat_traits<Tag, typename std::enable_if<
+   struct stat_tag_to_type<Tag, typename std::enable_if<
       std::is_base_of<MacBase, Tag>::value
       >::type
    >
    {
-      using StatType = SimpleCounter<int>;
+      using type = SimpleCounter<long unsigned int>;
    };
 
    template <typename Tag>
-   struct stat_traits<Tag, typename std::enable_if<
+   struct stat_tag_to_type<Tag, typename std::enable_if<
       std::is_base_of<SisBase, Tag>::value
       >::type
    >
    {
-      using StatType = SimpleCounter<int>;
+      using type = SimpleCounter<int>;
    };
+
 }
 
 
@@ -59,3 +60,6 @@ template <bool IsOperational>
 void initializeStatistics();
 
 LoggerType& getLoggerRef();
+
+#define STAT_LOG_MAC_SIS_SHM_NAME "stat_log_mac_sis"
+#define STAT_LOG_HW_INTF_SHM_NAME "stat_log_hw_intf"

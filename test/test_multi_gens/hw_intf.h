@@ -12,12 +12,12 @@ namespace stat_log
 {
 
    template <typename Tag>
-   struct stat_traits<Tag, typename std::enable_if<
+   struct stat_tag_to_type<Tag, typename std::enable_if<
       std::is_base_of<HwIntfBase, Tag>::value
       >::type
    >
    {
-      using StatType = SimpleCounter<char>;
+      using type = SimpleCounter<char>;
    };
 }
 

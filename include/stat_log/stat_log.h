@@ -42,7 +42,6 @@ struct LogStatControl : detail::LogStatBase<UserStatH, false, Logger>
    {
       //First extract the Component hierarchy portion of
       // the user_input (if it exists)
-
       std::vector<std::string> user_strings;
       for(int i = 1; i < argc; ++i)
          user_strings.push_back(argv[i]);

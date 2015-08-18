@@ -8,7 +8,7 @@ library with the following top-level requirements:
 1. _The user shall be able to define a hierarchy of statistics at compile time_. From the perspective of the user, the
    purpose of this hierarchy is to simply organize the statistics.  For example, suppose the user is writing software
    for a wireless network application.  Suppose, for simplicity, there are only 3 components of this software
-  * **MAC**: (Multiple-Access)  This component may be responsible relaying user traffic from an IP component sitting above it. 
+  * **MAC**: (Multiple-Access)  This component may be responsible for relaying user traffic from an IP component sitting above it. 
     Specifically, the MAC's roles: 
       * Fragmentation and Reassembly of IP packets into MAC frames.
       * Buffering/Queuing of said frames.
@@ -16,8 +16,8 @@ library with the following top-level requirements:
       * Spectral deconfliction protocol to avoid wireless contention.
   * **SIS**: (Signal-in-Space) This component is responsible for
       * Relaying MAC and control frames between the MAC and the Hardware Interface layers.
-      * Collecting per neighbor wireless link statistics (drops, average snr, etc.) for the purpose of optimizing the spectral  
-        deconfliction protocol. 
+      * Collecting per neighbor wireless link statistics (drops, average snr, etc.) for the purpose of optimizing 
+        the spectral deconfliction protocol. 
   * **Hardware Interface**:  This component is responsible for interfacing with the hardware (e.g., an FPGA) that is
     responsible for doing the wireless signal processing. 
     

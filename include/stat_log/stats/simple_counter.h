@@ -14,7 +14,8 @@ namespace stat_log
       void doCommand(Repr* shared_ptr, StatCmd cmd, boost::any& arg)
       {
          //TODO: handle all commands
-         std::cout << std::dec << " In doCommand, value = " << *shared_ptr << " ";
+         std::cout << std::dec << " In doCommand, value = "
+            << (unsigned long int)*shared_ptr << " ";
       }
    };
 }

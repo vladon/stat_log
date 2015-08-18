@@ -9,7 +9,9 @@ int main(int argc, char** argv)
    auto& macSisStat = getStatSingleton<ControlStatMacSis>();
    auto& hwIntfStat = getStatSingleton<ControlStatHwIntf>();
 
-   //TODO: Combine stat processing
+   //TODO: is this a good way to combine the control
+   // functionality of multiple stat controllers?
    macSisStat.parseUserCommands(argc, argv);
+   hwIntfStat.parseUserCommands(argc, argv);
    return 0;
 }

@@ -10,6 +10,6 @@ int main(int argc, char** argv)
    auto& macSisStat = getStatSingleton<OpStatMacSis>();
    auto& hwIntfStat = getStatSingleton<OpStatHwIntf>();
    macSisStat.writeStat<SIS::MAC_PKTS_DOWN_TAG>(88);
-   //TODO: write stats
+   hwIntfStat.writeStat<HW_INTERFACE::MISC_FPGA_FAULT_TAG>(2);
    return 0;
 }

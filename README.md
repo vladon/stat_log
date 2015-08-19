@@ -46,7 +46,7 @@ library with the following top-level requirements:
   Note this hierarchy allows the user to reuse the "BUFFER_OVERFLOW" statistic name.
   
 2. _Extremely simple mechanism for updating statistics.  Furthermore, this mechanism should be completely agnostic to
-   the details of what statistical values are to reported._  Here is one candidate interface which meets this
+   the details of how the statistical values are to be reported._  Here is one candidate interface which meets this
    requirement:
 
   ```cpp

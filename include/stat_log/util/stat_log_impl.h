@@ -15,11 +15,6 @@ namespace detail
    using namespace boost;
    using namespace boost::fusion;
 
-   template <typename U> struct AlwaysVoid {
-      typedef void type;
-   };
-
-
    template <typename Tag, typename MatchingTags>
    struct GenericLogger
    {

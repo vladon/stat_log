@@ -8,6 +8,7 @@
 #include "stat_log/backends/shared_mem_backend.h"
 #include "stat_log/stats/stats_common.h"
 #include "stat_log/stats/simple_counter.h"
+#include "stat_log/stats/stat_array.h"
 
 #include <iostream>
 #include <vector>
@@ -41,6 +42,14 @@ namespace stat_log
    struct stat_tag_to_type<Tag>
    {
       using type = SimpleCounter<int>;
+   };
+
+   template <>
+   struct stat_tag_to_type<SIS::MAC_PKTS_DOWN_TAG>
+   {
+      // using ChildStat = SimpleCounter<int>;
+      using ChildStat = int;
+      using type = StatArray<4, StatArray<6, ChildStat>>;
    };
 }
 

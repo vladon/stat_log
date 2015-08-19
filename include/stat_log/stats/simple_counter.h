@@ -1,4 +1,6 @@
 #pragma once
+#include <boost/any.hpp>
+#include <type_traits>
 
 namespace stat_log
 {
@@ -6,16 +8,19 @@ namespace stat_log
    struct SimpleCounter
    {
       using SharedType = Repr;
-      void write(Repr* shared_ptr, Repr value)
+      static_assert(std::is_integral<SharedType>::value,
+            "SimpleCounter's underlying type MUST be integral!");
+      static void write(void* shared_ptr, Repr value)
       {
-         (*shared_ptr) += value;
+         auto ptr = reinterpret_cast<Repr*>(shared_ptr);
+         (*ptr) += value;
       }
 
-      void doCommand(Repr* shared_ptr, StatCmd cmd, boost::any& arg)
+      static void doCommand(void* shared_ptr, StatCmd cmd, boost::any& arg)
       {
+         auto ptr = reinterpret_cast<Repr*>(shared_ptr);
          //TODO: handle all commands
-         std::cout << std::dec << " In doCommand, value = "
-            << (unsigned long int)*shared_ptr << " ";
+         std::cout << std::dec << (unsigned long int)*ptr;
       }
    };
 

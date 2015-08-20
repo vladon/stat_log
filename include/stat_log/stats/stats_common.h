@@ -2,6 +2,8 @@
 #include "stat_log/parsers/parser_common.h"
 #include <boost/any.hpp>
 #include <type_traits>
+#include <vector>
+#include <string>
 
 namespace stat_log
 {
@@ -25,10 +27,14 @@ struct is_serialization_deferred
    static constexpr bool value = false;
 };
 
+template <typename Repr>
+struct num_stat_dimensions
+{
+      static constexpr int value = 1;
+};
 
 namespace detail
 {
-
    template <typename Repr, typename WritePolicy>
    struct SimpleStat
    {
@@ -39,11 +45,18 @@ namespace detail
          WritePolicy::write(ptr, value);
       }
 
-      static void doCommand(void* shared_ptr, StatCmd cmd, boost::any& arg)
+      static void doCommand(void* shared_ptr, StatCmd cmd, boost::any& arg,
+            const std::vector<std::string>& enumNames,
+            const std::vector<std::string>& dimensionNames,
+            int dimension_idx)
       {
          auto ptr = reinterpret_cast<Repr*>(shared_ptr);
          //TODO: handle all commands
-         std::cout << std::dec << (unsigned long int)*ptr;
+         auto val = *ptr;
+         if(val >= 0 && val < enumNames.size())
+            std::cout << enumNames[val];
+         else
+            std::cout << std::dec << (unsigned long int)val;
       }
    };
 
@@ -113,8 +126,20 @@ struct ControlStatProxy : detail::StatProxyBase<StatType>
 {
    void doStatCommand(StatCmd cmd, boost::any& cmd_arg)
    {
-      this->doCommand(this->shared_ptr, cmd, cmd_arg);
+      this->doCommand(this->shared_ptr, cmd, cmd_arg,
+            enumerationNames, dimensionNames, 0);
    }
+
+   //If the child stat(s) are of enumeration type
+   // they can make use of this index to enumeration
+   // name mapping for viewing purposes.
+   std::vector<std::string> enumerationNames;
+   // std::tuple<std::array<std::string, NumDims>...>;
+
+   //The per-dimension labels.
+   // std::array<std::string, num_stat_dimensions<StatType>::value> dimensionNames;
+   std::vector<std::string> dimensionNames;
+
 };
 
 }

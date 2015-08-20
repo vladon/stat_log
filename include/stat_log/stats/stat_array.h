@@ -4,6 +4,8 @@
 #include <array>
 #include <boost/any.hpp>
 #include <type_traits>
+#include <vector>
+#include <string>
 
 namespace stat_log
 {
@@ -20,9 +22,13 @@ namespace stat_log
             stat_type::write(shared_ptr, value);
          }
 
-         static void doCommand(void* shared_ptr, StatCmd cmd, boost::any& arg)
+         static void doCommand(void* shared_ptr, StatCmd cmd, boost::any& arg,
+            const std::vector<std::string>& enumNames,
+            const std::vector<std::string>& dimensionNames,
+            int dimension_idx)
          {
-            stat_type::doCommand(shared_ptr, cmd, arg);
+            stat_type::doCommand(shared_ptr, cmd, arg,
+                  enumNames, dimensionNames, dimension_idx);
          }
       };
 
@@ -42,9 +48,13 @@ namespace stat_log
             traits<stat_type>::write(shared_ptr, value);
          }
 
-         static void doCommand(void* shared_ptr, StatCmd cmd, boost::any& arg)
+         static void doCommand(void* shared_ptr, StatCmd cmd, boost::any& arg,
+            const std::vector<std::string>& enumNames,
+            const std::vector<std::string>& dimensionNames,
+            int dimension_idx)
          {
-            traits<stat_type>::doCommand(shared_ptr, cmd, arg);
+            traits<stat_type>::doCommand(shared_ptr, cmd, arg,
+                  enumNames, dimensionNames, dimension_idx);
          }
       };
    }
@@ -76,14 +86,20 @@ namespace stat_log
          write_idx(shared_ptr, idx, args...);
       }
 
-      static void doCommand(void* shared_ptr, StatCmd cmd, boost::any& arg)
+      static void doCommand(void* shared_ptr, StatCmd cmd, boost::any& arg,
+            const std::vector<std::string>& enumNames,
+            const std::vector<std::string>& dimensionNames,
+            int dimension_idx)
       {
          auto& theArray = *reinterpret_cast<SharedType*>(shared_ptr);
+         if(dimension_idx == 0 && !dimensionNames.empty())
+            std::cout << dimensionNames[0] << "\n";
          //TODO: handle all commands
          std::cout << std::dec << "[";
          for(auto i = 0; i < Size; ++i)
          {
-            stat_array_detail::traits<Repr>::doCommand((void*)&theArray[i], cmd, arg);
+            stat_array_detail::traits<Repr>::doCommand((void*)&theArray[i], cmd, arg,
+                  enumNames, dimensionNames, dimension_idx+1);
             if(i < Size - 1)
                std::cout << ", ";
             else
@@ -107,15 +123,24 @@ namespace stat_log
          StatArray<N,Repr>::write(child_ptr, args...);
       }
 
-      static void doCommand(void* shared_ptr, StatCmd cmd, boost::any& arg)
+      static void doCommand(void* shared_ptr, StatCmd cmd, boost::any& arg,
+            const std::vector<std::string>& enumNames,
+            const std::vector<std::string>& dimensionNames,
+            int dimension_idx)
       {
          auto& theArray = *reinterpret_cast<SharedType*>(shared_ptr);
          //TODO: handle all commands
+         if(dimension_idx == 0 && dimensionNames.size() == 2)
+         {
+            std::cout << "X = " << dimensionNames[0]
+               << ", Y = " << dimensionNames[1] << std::endl;
+         }
          std::cout << std::dec << "[";
          for(auto i = 0; i < Size; ++i)
          {
             auto child_ptr = reinterpret_cast<void*>(&theArray[i]);
-            StatArray<N,Repr>::doCommand(child_ptr, cmd, arg);
+            StatArray<N,Repr>::doCommand(child_ptr, cmd, arg,
+                  enumNames, dimensionNames, dimension_idx+1);
             if(i < Size - 1)
                std::cout << ", ";
             else
@@ -131,5 +156,17 @@ namespace stat_log
    struct is_serialization_deferred<StatArray<Size, Repr>>
    {
       static constexpr bool value = is_serialization_deferred<Repr>::value;
+   };
+
+   template <int Size, typename Repr>
+   struct num_stat_dimensions<StatArray<Size, Repr>>
+   {
+         static constexpr int value = 1;
+   };
+
+   template <int Size, typename Repr, int N>
+   struct num_stat_dimensions<StatArray<Size, StatArray<N, Repr>>>
+   {
+         static constexpr int value = 1 + num_stat_dimensions<StatArray<N,Repr>>::value;
    };
 }

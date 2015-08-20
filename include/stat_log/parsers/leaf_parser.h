@@ -6,11 +6,34 @@
 namespace stat_log
 {
 
+template<typename Stat>
+struct DoCmd<Stat, false>
+{
+   template <typename TagNode>
+   static void Go(Stat& stat, StatCmd cmd, boost::any& cmd_arg)
+   {
+      detail::indent(TagNode::depth);
+      using Parent = typename TagNode::parent;
+      using Tag = typename TagNode::tag;
+      std::cout << TagNode::name << std::endl;
+      detail::indent(TagNode::depth);
+      std::cout << "\t";
+      stat.template sendStatCommand<Tag>(cmd, cmd_arg);
+      std::cout << "\n";
+   }
+};
+
 template <typename TagNode, typename Stat>
 typename std::enable_if_t<!detail::is_parent<TagNode>::value>
 processCommands(Stat& stat, const std::string& user_cmds)
 {
-   std::cout << "PROCESS CMDS child" << std::endl;
+   auto cmd = StatCmd::NO_CMD;
+   boost::any cmd_arg;
+
+   //TODO: process child options
+   cmd = StatCmd::PRINT_STAT_TYPE;
+   using TheDoCmd = DoCmd<Stat, false>;
+   TheDoCmd::template Go<TagNode>(stat, cmd, cmd_arg);
 }
 
 template <typename TagNode, typename Stat,
@@ -21,27 +44,7 @@ template <typename TagNode, typename Stat,
 void parse(Stat& stat, std::string& component_name, std::string& user_cmds)
 {
    if(component_name == TagNode::name)
-   {
       processCommands<TagNode>(stat, user_cmds);
-   }
 }
 
-template<typename Stat>
-struct DoCmd<Stat, false>
-{
-   template <typename TagNode>
-   static void Go(Stat& stat, StatCmd cmd, boost::any& cmd_arg)
-   {
-      detail::indent(TagNode::depth);
-      using Parent = typename TagNode::parent;
-      using Tag = typename TagNode::tag;
-      std::cout << "Type is = " << TagNode::name
-         << ", parent is " << Parent::name << " ";
-         // << ", value is " << getValue<Tag>(stat)
-      stat.template sendStatCommand<Tag>(cmd, cmd_arg);
-      std::cout  << ", depth is " << TagNode::depth
-         // << ", addr is " << std::hex << &getValue<Tag>(theOpStats)
-         << std::endl;
-   }
-};
 }

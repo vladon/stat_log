@@ -13,6 +13,23 @@
 namespace stat_log
 {
 
+namespace detail
+{
+   template <typename StatTag, typename Stats>
+   auto& getStatHandle(Stats& theStats)
+   {
+      auto statHdlView = getStatHandleView<StatTag>(theStats);
+      static_assert(boost::fusion::result_of::size<decltype(statHdlView)>::value == 1,
+            "Too many matching tags in getStatHandle!");
+      auto& stat_hdl = boost::fusion::deref(boost::fusion::begin(statHdlView));
+      using StatHdlType = std::remove_reference_t<decltype(stat_hdl)>;
+      static_assert(
+            StatHdlType::IsParent == false,
+            "Require a leaf node in getStatHandle!");
+      return stat_hdl;
+   }
+}
+
 template <typename UserStatH, typename Logger>
 struct LogStatOperational :
    detail::LogStatBase<
@@ -24,16 +41,7 @@ struct LogStatOperational :
    template <typename StatTag, typename... Args>
    void writeStat(Args... args)
    {
-      using namespace boost::fusion;
-      auto statHdlView = detail::getStatHandleView<StatTag>(this->theStats);
-      static_assert(result_of::size<decltype(statHdlView)>::value == 1,
-            "Too many matching tags in writeStat!");
-      auto& stat_hdl = deref(begin(statHdlView));
-      using StatHdlType = std::remove_reference_t<decltype(stat_hdl)>;
-      static_assert(
-            StatHdlType::IsParent == false,
-            "Require a leaf node for writeStat!");
-      stat_hdl.theProxy.write(args...);
+      detail::getStatHandle<StatTag>(this->theStats).theProxy.write(args...);
    }
 
    //This method will be called by the base class once it is done with
@@ -102,16 +110,21 @@ struct LogStatControl :
    template <typename StatTag>
    void sendStatCommand(StatCmd cmd, boost::any& cmd_arg)
    {
-      using namespace boost::fusion;
-      auto statHdlView = detail::getStatHandleView<StatTag>(this->theStats);
-      static_assert(result_of::size<decltype(statHdlView)>::value == 1,
-            "Too many matching tags in sendStatCommand!");
-      auto& stat_hdl = deref(begin(statHdlView));
-      using StatHdlType = std::remove_reference_t<decltype(stat_hdl)>;
-      static_assert(//decltype(stat_hdl)::IsParent == false,
-            StatHdlType::IsParent == false,
-            "Require a leaf node for sendStatCommand!");
-      stat_hdl.theProxy.doStatCommand(cmd, cmd_arg);
+      detail::getStatHandle<StatTag>(this->theStats).theProxy.doStatCommand(cmd, cmd_arg);
+   }
+
+   template <typename StatTag>
+   void assignEnumerationNames(const std::vector<std::string>& enumNames)
+   {
+      detail::getStatHandle<StatTag>(this->theStats)
+         .theProxy.enumerationNames = enumNames;
+   }
+
+   template <typename StatTag>
+   void assignDimensionNames(const std::vector<std::string>& dimNames)
+   {
+      detail::getStatHandle<StatTag>(this->theStats)
+         .theProxy.dimensionNames = dimNames;
    }
 
    void doInit()

@@ -8,6 +8,7 @@
 #include "stat_log/backends/shared_mem_backend.h"
 #include "stat_log/stats/stats_common.h"
 #include "stat_log/stats/simple_counter.h"
+#include "stat_log/stats/simple_status.h"
 #include "stat_log/stats/stat_array.h"
 
 #include <iostream>
@@ -50,6 +51,12 @@ namespace stat_log
       // using ChildStat = SimpleCounter<int>;
       using ChildStat = int;
       using type = StatArray<4, StatArray<6, ChildStat>>;
+   };
+
+   template <>
+   struct stat_tag_to_type<HW_INTERFACE::MISC_FPGA_FAULT_TAG>
+   {
+      using type = SimpleStatus<int>;
    };
 }
 

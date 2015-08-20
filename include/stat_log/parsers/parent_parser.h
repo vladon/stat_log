@@ -18,11 +18,7 @@ struct DoCmd<Stat, true>
       detail::indent(TagNode::depth);
       using Parent = typename TagNode::parent;
       using Tag = typename TagNode::tag;
-      std::cout << "(PARENT) Type is = " << TagNode::name
-         << ", parent is " << Parent::name
-         << ", depth is " << TagNode::depth
-         // << ", addr is " << std::hex << &getValue<Tag>(theOpStats)
-         << std::endl;
+      std::cout << TagNode::name << std::endl;
       for_each(Children{}, [&](auto tag_node)
          {
             using ChildTagNode = decltype(tag_node);
@@ -63,10 +59,7 @@ processCommands(Stat& stat, const std::string& user_cmds)
       cmd = StatCmd::PRINT_STAT_TYPE;
       detail::indent(TagNode::depth);
       using Parent = typename TagNode::parent;
-      std::cout << "(PARENT) Type is = " << TagNode::name
-            << ", parent is " << Parent::name
-            << ", depth is " << TagNode::depth
-            << std::endl;
+      std::cout << TagNode::name << std::endl;
    }
    if(cmd != StatCmd::NO_CMD)
    {

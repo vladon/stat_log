@@ -61,7 +61,6 @@ namespace detail
 
       void doSerialize()
       {
-         // std::cout << "TYPE =  " << TypeId<Tag>{} << std::endl;
          theProxy.serialize();
       }
    };
@@ -77,9 +76,6 @@ namespace detail
       using Proxy = ControlStatProxy<typename stat_tag_to_type<Tag>::type>;
       Proxy theProxy;
 
-      void doSerialize()
-      {
-      }
    };
 
    ///////////////

@@ -43,7 +43,9 @@ library with the following top-level requirements:
      BUFFER_OVERFLOW
   }
   ```
+
   Note this hierarchy allows the user to reuse the "BUFFER_OVERFLOW" statistic name.
+  For concreteness, I will be using this example throughout the documentation and the [Test Code](test).
   
 2. _Extremely simple mechanism for updating statistics.  Furthermore, this mechanism should be completely agnostic to
    the details of how the statistical values are to be reported._  Here is one candidate interface which meets this

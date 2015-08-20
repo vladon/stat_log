@@ -4,8 +4,8 @@
 #include "stat_log/stat_log.h"
 #include "stat_log/backends/shared_mem_backend.h"
 #include "stat_log/stats/stats_common.h"
-#include "stat_log/stats/simple_counter.h"
 #include "stat_log/loggers/shared_memory_logger.h"
+#include "stat_log/stats/simple_status.h"
 
 
 namespace stat_log
@@ -17,7 +17,7 @@ namespace stat_log
       >::type
    >
    {
-      using type = SimpleCounter<char>;
+      using type = SimpleStatus<int>;
    };
 }
 

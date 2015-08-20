@@ -20,6 +20,7 @@ int main(int argc, char** argv)
    auto& hwIntfStat = getStatSingleton<OpStatHwIntf>();
    macSisStat.writeStat<SIS::MAC_PKTS_DOWN_TAG>(88);
    hwIntfStat.writeStat<HW_INTERFACE::MISC_FPGA_FAULT_TAG>(2);
+   hwIntfStat.writeStat<HW_INTERFACE::MISC_FPGA_FAULT_TAG>(2);
 
    std::this_thread::sleep_for(std::chrono::seconds{10});
    macSisStat.stop();

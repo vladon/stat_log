@@ -5,6 +5,7 @@
 
 namespace stat_log
 {
+
 template <typename Tag, class Enable = void>
 struct stat_tag_to_type;
 /* Example:
@@ -27,6 +28,25 @@ struct is_serialization_deferred
 
 namespace detail
 {
+
+   template <typename Repr, typename WritePolicy>
+   struct SimpleStat
+   {
+      using SharedType = Repr;
+      static void write(void* shared_ptr, Repr value)
+      {
+         auto ptr = reinterpret_cast<Repr*>(shared_ptr);
+         WritePolicy::write(ptr, value);
+      }
+
+      static void doCommand(void* shared_ptr, StatCmd cmd, boost::any& arg)
+      {
+         auto ptr = reinterpret_cast<Repr*>(shared_ptr);
+         //TODO: handle all commands
+         std::cout << std::dec << (unsigned long int)*ptr;
+      }
+   };
+
    template <typename StatType>
    struct StatProxyBase : StatType
    {
@@ -44,6 +64,12 @@ namespace detail
       }
    };
 }
+
+template <typename Repr, typename WritePolicy>
+struct is_serialization_deferred<detail::SimpleStat<Repr, WritePolicy>>
+{
+   static constexpr bool value = false;
+};
 
 template <typename StatType,
    typename std::enable_if<

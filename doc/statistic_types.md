@@ -1,5 +1,4 @@
 Statistic Types
 ========
 
-
-TODO
+A statistic 

@@ -12,3 +12,18 @@ namespace stat_log
 }
 
 
+//Useful for printing types (for debugging)
+#if 0
+#include <cxxabi.h>
+template <typename T>
+struct TypeId { };
+
+   template<typename T>
+inline std::ostream& operator<<(std::ostream& out, TypeId<T> typeId)
+{
+   int status;
+   auto name = typeid(T).name();
+   out << abi::__cxa_demangle(name, 0,0, & status);
+   return out;
+}
+#endif

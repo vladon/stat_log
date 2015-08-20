@@ -1,11 +1,30 @@
 #pragma once
-#include "stat_log/fusion_includes.h"
 //TODO: generalize backend types
 #include "stat_log/defs.h"
 #include "stat_log/backends/shared_mem_backend.h"
 #include "stat_log/loggers/logger_common.h"
 #include "stat_log/stats/stats_common.h"
+
+#include <boost/fusion/view.hpp>
+#include <boost/fusion/algorithm.hpp>
+#include <boost/type_traits.hpp>
+#include <boost/fusion/support/is_sequence.hpp>
+#include <boost/fusion/include/deref.hpp>
+#include <boost/fusion/include/begin.hpp>
+#include <boost/fusion/include/for_each.hpp>
+#include <boost/fusion/include/vector.hpp>
+
+#include <boost/fusion/include/make_vector.hpp>
+#include <boost/fusion/include/mpl.hpp>
+
+#include <boost/mpl/arg.hpp>
+#include <boost/mpl/transform.hpp>
+#include <boost/mpl/fold.hpp>
+#include <boost/mpl/contains.hpp>
+
 #include <memory>
+#include <type_traits>
+#include <string>
 
 namespace stat_log
 {

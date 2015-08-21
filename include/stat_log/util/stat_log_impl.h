@@ -12,10 +12,9 @@
 #include <boost/fusion/include/deref.hpp>
 #include <boost/fusion/include/begin.hpp>
 #include <boost/fusion/include/for_each.hpp>
-#include <boost/fusion/include/vector.hpp>
 
-#include <boost/fusion/include/make_vector.hpp>
-#include <boost/fusion/include/mpl.hpp>
+#include <boost/fusion/include/as_list.hpp>
+#include <boost/fusion/include/list.hpp>
 
 #include <boost/mpl/arg.hpp>
 #include <boost/mpl/transform.hpp>
@@ -118,14 +117,14 @@ namespace detail
          //Add the entire lineage of parents to the matching tags for
          // this statistic
          using matching_tags =
-            typename mpl::push_back<ParentVec,ThisTag>::type;
+            typename mpl::push_front<ParentVec,ThisTag>::type;
          using this_stat = typename std::conditional_t<
                IsOpType::value,
                GenericOpStat<ThisTag, matching_tags>,
                GenericControlStat<ThisTag, matching_tags>
             >;
          //Finally add this statistic to the global tag vec
-         using type = typename mpl::push_back<GlobalTagVec, this_stat>::type;
+         using type = typename mpl::push_front<GlobalTagVec, this_stat>::type;
       };
 
    template <typename GlobalTagVec, typename ParentVec,
@@ -134,13 +133,13 @@ namespace detail
       struct stat_creator_helper
       {
 
-         using ThisLineage = typename mpl::push_back<ParentVec,
+         using ThisLineage = typename mpl::push_front<ParentVec,
                typename TagHierarchy::tag>::type;
          using ChildTagHierarchy = typename TagHierarchy::child_list;
          using ThisTag = typename TagHierarchy::tag;
          using this_logger = GenericLogger<ThisTag, ThisLineage>;
 
-         using UpdatedGlobalTagVec = typename mpl::push_back<
+         using UpdatedGlobalTagVec = typename mpl::push_front<
             GlobalTagVec, this_logger>::type;
 
          // _1 == UpdatedGlobalTagVec
@@ -163,8 +162,8 @@ namespace detail
       struct stat_creator
       {
          using type = typename stat_creator_helper<
-            mpl::vector<>, //Global Tag/Stat Vector
-            mpl::vector<>, //Parent vector
+            mpl::list<>, //Global Tag/Stat list
+            mpl::list<>, //Parent list
             TagHierarchy,
             //Need to wrap the boolean to be nice to the MPL algorithms
             typename std::integral_constant<bool, IsOperational>
@@ -225,7 +224,7 @@ namespace detail
 
       using TagHierarchy = typename detail::GenTagHierarchy<UserStatDefs, TopNode,
             std::integral_constant<int, 0> >::type;
-      using TheStats = typename boost::fusion::result_of::as_vector<
+      using TheStats = typename boost::fusion::result_of::as_list<
          typename detail::stat_creator<TagHierarchy, IsOperational>::type>::type;
 
       //Creates a single shared memory block that will store:

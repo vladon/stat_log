@@ -1,30 +1,103 @@
 #pragma once
 #include "stat_log/stats/stats_common.h"
+#include <iomanip>
+#include <chrono>
+
 namespace stat_log
 {
-   using LogControlWord = uint32_t;
-   template <typename SharedType>
-   struct LogProxy
+
+   namespace detail
    {
-      SharedType* shared_ptr = nullptr;
-      void setSharedPtr(void* ptr)
+      using LogControlWord = uint32_t;
+
+      struct LogControlProxy
       {
-         shared_ptr = reinterpret_cast<SharedType*>(ptr);
+         using SharedType = LogControlWord;
+         SharedType* shared_ptr = nullptr;
+         void setSharedPtr(void* ptr)
+         {
+            shared_ptr = reinterpret_cast<SharedType*>(ptr);
+         }
+
+         void setLevel(SharedType newLevel)
+         {
+            *shared_ptr = newLevel;
+         }
+
+         SharedType getLevel()
+         {
+            return *shared_ptr;
+         }
+
+         static constexpr size_t getSharedSize()
+         {
+            return sizeof(SharedType);
+         }
+      };
+   }
+
+   class LoggerGenerator
+   {
+      public:
+         void writeData(const std::string& log_entry,
+               const char* TagName, const char* LogLevelName)
+         {
+            using namespace std::chrono;
+            auto now = system_clock::now();
+            auto tt = system_clock::to_time_t(now);
+            auto us = duration_cast<microseconds>(now.time_since_epoch());
+            doWriteData(log_entry.c_str(), log_entry.size()+1, TagName, LogLevelName, tt, us % seconds{1});
+         }
+      private:
+         virtual void doWriteData(const char* buf, std::size_t len,
+               const char* TagName, const char* LogLevelName,
+               std::time_t time_stamp,
+               std::chrono::microseconds time_stamp_us) = 0;
+   };
+
+
+
+   //Returned to user from the getXXLog() methods
+   class LogGenProxy
+   {
+     public:
+      LogGenProxy(LoggerGenerator& logger,
+            bool is_enabled,
+            const char* const tag_name,
+            const char* const log_level_name)
+         : theLogger(logger),
+           enabled(is_enabled),
+           TagName(tag_name),
+           LogLevelName(log_level_name)
+      {}
+
+      template <typename T>
+      LogGenProxy& operator<<(T const& value)
+      {
+         if(false == enabled)
+            return *this;
+         std::stringstream ss;
+         ss << value;
+         theLogger.writeData(ss.str(), TagName, LogLevelName);
       }
 
-      void setLevel(SharedType newLevel)
+      void hexDump(const char* buf, std::size_t len, const std::string& label)
       {
-         *shared_ptr = newLevel;
+         std::stringstream ss;
+         ss << label << "\n";
+         ss << std::setfill('0');
+         for(std::size_t i = 0; i < len; ++i)
+         {
+            ss << std::hex << std::setw(2) << (int)buf[i];
+            ss << (((i+1) % 32 == 0)? "\n" : " ");
+         }
+         theLogger.writeData(ss.str(), TagName, LogLevelName);
       }
 
-      SharedType getLevel()
-      {
-         return *shared_ptr;
-      }
-
-      static constexpr size_t getSharedSize()
-      {
-         return sizeof(SharedType);
-      }
+     private:
+      LoggerGenerator& theLogger;
+      bool enabled;
+      const char* const TagName;
+      const char* const LogLevelName;
    };
 }

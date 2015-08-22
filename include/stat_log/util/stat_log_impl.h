@@ -21,7 +21,6 @@
 #include <boost/mpl/fold.hpp>
 #include <boost/mpl/contains.hpp>
 
-#include <memory>
 #include <type_traits>
 #include <string>
 
@@ -45,7 +44,7 @@ namespace detail
       {
       }
 
-      using Proxy = LogProxy<LogControlWord>;
+      using Proxy = LogControlProxy;
       //theProxy is use to both
       // 1. Set the log level (control) AND
       // 2. Check the current log level (operational)
@@ -212,8 +211,7 @@ namespace detail
          using type = TagNode<T, Parent, Depth::value, child_type_vec>;
       };
 
-   template <typename UserStatDefs, bool IsOperational,
-            typename Logger, typename Derived>
+   template <typename UserStatDefs, bool IsOperational, typename Derived>
       struct LogStatBase
    {
       struct TopName
@@ -269,8 +267,6 @@ namespace detail
          static_cast<Derived*>(this)->doStop();
       }
 
-
-      std::shared_ptr<Logger> theLogger;
       TheStats theStats;
       shared_mem_backend shm_backend;
    };

@@ -8,6 +8,7 @@
 
 #include <thread>
 #include <chrono>
+#include <memory>
 
 namespace stat_log
 {
@@ -29,14 +30,20 @@ namespace detail
    }
 }
 
-template <typename UserStatH, typename Logger>
+template <typename UserStatH>
 struct LogStatOperational :
-   detail::LogStatBase<
-      UserStatH, true, Logger, LogStatOperational<UserStatH, Logger>
+   detail::LogStatBase<UserStatH, true, LogStatOperational<UserStatH>
    >
 {
+
    //TODO: add
    // logDebug, logInfo ...
+   LogGenProxy testLog()
+   {
+      return LogGenProxy {
+         *theLogger, true, "TEST_TAG_NAME", "TEST_LOG_LEVEL"};
+   }
+
    template <typename StatTag, typename... Args>
    void writeStat(Args... args)
    {
@@ -76,18 +83,22 @@ struct LogStatOperational :
       serialization_thread.join();
    }
 
+   //TODO: probably want a vector of loggers ...
+   // std::shared_ptr<LoggerGenerator> theLogger;
+   LoggerGenerator* theLogger;
+
    std::thread serialization_thread;
    bool serializer_running = false;
 };
 
-template <typename UserStatH, typename Logger>
+template <typename UserStatH>
 struct LogStatControl :
    detail::LogStatBase<
-      UserStatH, false, Logger, LogStatControl<UserStatH, Logger>
+      UserStatH, false, LogStatControl<UserStatH>
    >
 {
    using BaseClass = detail::LogStatBase<
-      UserStatH, false, Logger, LogStatControl<UserStatH, Logger>>;
+      UserStatH, false, LogStatControl<UserStatH>>;
    using TopNode = typename BaseClass::TopNode;
    using TagHierarchy = typename BaseClass::TagHierarchy;
 

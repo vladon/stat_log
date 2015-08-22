@@ -26,8 +26,8 @@ struct TOP_MAC_SIS
 };
 
 
-using OpStatMacSis = stat_log::LogStatOperational<TOP_MAC_SIS, LoggerType>;
-using ControlStatMacSis = stat_log::LogStatControl<TOP_MAC_SIS, LoggerType>;
+using OpStatMacSis = stat_log::LogStatOperational<TOP_MAC_SIS>;
+using ControlStatMacSis = stat_log::LogStatControl<TOP_MAC_SIS>;
 /*********************************/
 
 //TODO: threading vs no-threaded policy
@@ -59,7 +59,7 @@ namespace stat_log
 template <bool IsOperational>
 void initializeStatistics();
 
-LoggerType& getLoggerRef();
+LoggerGenerator& getLoggerRef();
 
 #define STAT_LOG_MAC_SIS_SHM_NAME "stat_log_mac_sis"
 #define STAT_LOG_HW_INTF_SHM_NAME "stat_log_hw_intf"

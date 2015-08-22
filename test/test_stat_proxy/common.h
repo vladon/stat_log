@@ -32,8 +32,8 @@ struct TOP_STAT
 };
 
 
-using OpStat = stat_log::LogStatOperational<TOP_STAT, LoggerType>;
-using ControlStat = stat_log::LogStatControl<TOP_STAT, LoggerType>;
+using OpStat = stat_log::LogStatOperational<TOP_STAT>;
+using ControlStat = stat_log::LogStatControl<TOP_STAT>;
 /*********************************/
 
 namespace stat_log
@@ -60,6 +60,6 @@ namespace stat_log
    };
 }
 
-LoggerType& getLoggerRef();
+LoggerGenerator& getLoggerRef();
 
 #define STAT_LOG_SHM_NAME "stat_log"

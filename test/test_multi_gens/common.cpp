@@ -1,9 +1,9 @@
 #include "common.h"
 #include "hw_intf.h"
 
-LoggerType& getLoggerRef()
+LoggerGenerator& getLoggerRef()
 {
-   static LoggerType theLogger;
+   static LoggerGenerator theLogger;
    return theLogger;
 }
 

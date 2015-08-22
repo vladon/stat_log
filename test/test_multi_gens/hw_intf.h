@@ -22,6 +22,6 @@ namespace stat_log
 }
 
 
-using LoggerType = stat_log::shared_mem_logger;
-using OpStatHwIntf = stat_log::LogStatOperational<HW_INTERFACE, LoggerType>;
-using ControlStatHwIntf = stat_log::LogStatControl<HW_INTERFACE, LoggerType>;
+using LoggerGenerator = stat_log::shared_mem_logger_generator;
+using OpStatHwIntf = stat_log::LogStatOperational<HW_INTERFACE>;
+using ControlStatHwIntf = stat_log::LogStatControl<HW_INTERFACE>;

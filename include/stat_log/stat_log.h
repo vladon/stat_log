@@ -9,6 +9,8 @@
 #include <thread>
 #include <chrono>
 #include <memory>
+#include <vector>
+#include <fstream>
 
 namespace stat_log
 {
@@ -22,10 +24,6 @@ namespace detail
       static_assert(boost::fusion::result_of::size<decltype(statHdlView)>::value == 1,
             "Too many matching tags in getStatHandle!");
       auto& stat_hdl = boost::fusion::deref(boost::fusion::begin(statHdlView));
-      using StatHdlType = std::remove_reference_t<decltype(stat_hdl)>;
-      static_assert(
-            StatHdlType::IsParent == false,
-            "Require a leaf node in getStatHandle!");
       return stat_hdl;
    }
 }
@@ -35,13 +33,47 @@ struct LogStatOperational :
    detail::LogStatBase<UserStatH, true, LogStatOperational<UserStatH>
    >
 {
-
-   //TODO: add
-   // logDebug, logInfo ...
-   LogGenProxy testLog()
+   template <typename LogTag>
+   LogGenProxy getLog(std::size_t log_idx, int log_level)
    {
+      assert(log_idx <= loggers.size());
+      auto& log_hdl = detail::getStatHandle<LogTag>(this->theStats);
+      using LogHdlType = std::remove_reference_t<decltype(log_hdl)>;
+      static_assert(
+            LogHdlType::IsParent == true,
+            "Require a parent_node for getLog!");
+
+      auto cur_log_level = log_hdl.theProxy.getLevel(log_idx);
+      std::cout << "Current log level is " << cur_log_level << std::endl;
       return LogGenProxy {
-         *theLogger, true, "TEST_TAG_NAME", "TEST_LOG_LEVEL"};
+         *loggers[log_idx],
+         log_level >= cur_log_level,
+         "TEST_TAG_NAME", //TODO: need to map the LogTag to a name
+         "TEST_LOG_LEVEL"};
+   }
+
+   template <typename LogTag>
+   LogGenProxy getDebugLog(std::size_t log_idx = 0)
+   {
+      return getLog<LogTag>(log_idx, 0);
+   }
+
+   template <typename LogTag>
+   LogGenProxy getInfoLog(std::size_t log_idx = 0)
+   {
+      return getLog<LogTag>(log_idx, 1);
+   }
+
+   template <typename LogTag>
+   LogGenProxy getAlertLog(std::size_t log_idx = 0)
+   {
+      return getLog<LogTag>(log_idx, 2);
+   }
+
+   template <typename LogTag>
+   LogGenProxy getErrorLog(std::size_t log_idx = 0)
+   {
+      return getLog<LogTag>(log_idx, 3);
    }
 
    template <typename StatTag, typename... Args>
@@ -83,9 +115,13 @@ struct LogStatOperational :
       serialization_thread.join();
    }
 
-   //TODO: probably want a vector of loggers ...
-   // std::shared_ptr<LoggerGenerator> theLogger;
-   LoggerGenerator* theLogger;
+   int addLogger(std::shared_ptr<LoggerGenerator> logger)
+   {
+      loggers.push_back(logger);
+      return loggers.size() - 1;
+   }
+
+   std::vector<std::shared_ptr<LoggerGenerator>> loggers;
 
    std::thread serialization_thread;
    bool serializer_running = false;
@@ -118,9 +154,9 @@ struct LogStatControl :
    }
 
    template <typename StatTag>
-   void sendStatCommand(StatCmd cmd, boost::any& cmd_arg)
+   void sendCommand(StatCmd cmd, boost::any& cmd_arg)
    {
-      detail::getStatHandle<StatTag>(this->theStats).theProxy.doStatCommand(cmd, cmd_arg);
+      detail::getStatHandle<StatTag>(this->theStats).theProxy.doCommand(cmd, cmd_arg);
    }
 
    template <typename StatTag>
@@ -137,11 +173,31 @@ struct LogStatControl :
          .theProxy.dimensionNames = dimNames;
    }
 
+   void outputLog(int logger_idx, const std::string& output_filename)
+   {
+      assert(logger_idx <= loggers.size());
+      std::fstream output{output_filename, std::ios::out};
+      //TODO: assign boolean flags as appropriate
+      loggers[logger_idx]->getLog(std::move(output),
+            true, //show_tag
+            true, //show_time_stamp
+            true  //show_log_level
+            );
+   }
+
    void doInit()
    {}
 
    void doStop()
    {}
+
+   int addLogger(std::shared_ptr<LoggerRetriever> logger)
+   {
+      loggers.push_back(logger);
+      return loggers.size() - 1;
+   }
+
+   std::vector<std::shared_ptr<LoggerRetriever>> loggers;
 };
 
 template <typename Stat>

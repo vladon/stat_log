@@ -7,7 +7,6 @@
 
 namespace stat_log
 {
-   //TODO: templates?
    class shared_mem_backend
    {
       public:

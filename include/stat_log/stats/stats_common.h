@@ -45,7 +45,10 @@ namespace detail
          WritePolicy::write(ptr, value);
       }
 
-      static void doCommand(void* shared_ptr, StatCmd cmd, boost::any& arg,
+      static void doStatCommand(
+            void* shared_ptr,
+            StatCmd cmd,
+            boost::any& arg,
             const std::vector<std::string>& enumNames,
             const std::vector<std::string>& dimensionNames,
             int dimension_idx)
@@ -124,9 +127,9 @@ struct OperationalStatProxy : detail::StatProxyBase<StatType>
 template <typename StatType>
 struct ControlStatProxy : detail::StatProxyBase<StatType>
 {
-   void doStatCommand(StatCmd cmd, boost::any& cmd_arg)
+   void doCommand(StatCmd cmd, boost::any& cmd_arg)
    {
-      this->doCommand(this->shared_ptr, cmd, cmd_arg,
+      this->doStatCommand(this->shared_ptr, cmd, cmd_arg,
             enumerationNames, dimensionNames, 0);
    }
 

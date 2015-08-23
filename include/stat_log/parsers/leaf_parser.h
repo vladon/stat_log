@@ -6,20 +6,24 @@
 namespace stat_log
 {
 
+//DoCmd specialization for leaf nodes.
 template<typename Stat>
 struct DoCmd<Stat, false>
 {
    template <typename TagNode>
    static void Go(Stat& stat, StatCmd cmd, boost::any& cmd_arg)
    {
-      detail::indent(TagNode::depth);
-      using Parent = typename TagNode::parent;
-      using Tag = typename TagNode::tag;
-      std::cout << TagNode::name << std::endl;
-      detail::indent(TagNode::depth);
-      std::cout << "\t";
-      stat.template sendStatCommand<Tag>(cmd, cmd_arg);
-      std::cout << "\n";
+      if(cmd == StatCmd::PRINT_STAT_TYPE)
+      {
+         detail::indent(TagNode::depth);
+         using Parent = typename TagNode::parent;
+         using Tag = typename TagNode::tag;
+         std::cout << TagNode::name << std::endl;
+         detail::indent(TagNode::depth);
+         std::cout << "\t";
+         stat.template sendCommand<Tag>(cmd, cmd_arg);
+         std::cout << "\n";
+      }
    }
 };
 

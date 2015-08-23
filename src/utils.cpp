@@ -20,10 +20,27 @@ namespace detail
       desc.add_options()
          ("help", po::value<std::string>()->implicit_value(""),
           "Show help memu")
+
          ("component", po::value<std::string>()->default_value(""),
           "TODO")
+
          ("list-stats", po::bool_switch()->default_value(false),
-          "List all statistics");
+          "List all statistics")
+
+         ("log-level", po::value<std::vector<std::string>>()->multitoken()->zero_tokens(),
+          "Set/Show per component log level. Args\n"
+          "\t<loggerIdx> [<LogLevel>]\n"
+          "where loggerIdx is the index of the logger, and LogLevel is new value\n"
+          "for the log level (if this argument is not specified the\n"
+          "current log level is displayed).")
+
+         ("output-log", po::value<std::vector<std::string>>()->multitoken()->zero_tokens(),
+          "Set/Show per component log level. Args\n"
+          "\t<loggerIdx> [<LogLevel>]\n"
+          "where loggerIdx is the index of the logger, and LogLevel is new value\n"
+          "for the log level (if this argument is not specified the\n"
+          "current log level is displayed).")
+         ;
       return std::move(desc);
    }
 

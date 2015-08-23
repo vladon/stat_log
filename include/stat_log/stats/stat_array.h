@@ -22,12 +22,12 @@ namespace stat_log
             stat_type::write(shared_ptr, value);
          }
 
-         static void doCommand(void* shared_ptr, StatCmd cmd, boost::any& arg,
+         static void doStatCommand(void* shared_ptr, StatCmd cmd, boost::any& arg,
             const std::vector<std::string>& enumNames,
             const std::vector<std::string>& dimensionNames,
             int dimension_idx)
          {
-            stat_type::doCommand(shared_ptr, cmd, arg,
+            stat_type::doStatCommand(shared_ptr, cmd, arg,
                   enumNames, dimensionNames, dimension_idx);
          }
       };
@@ -48,12 +48,12 @@ namespace stat_log
             traits<stat_type>::write(shared_ptr, value);
          }
 
-         static void doCommand(void* shared_ptr, StatCmd cmd, boost::any& arg,
+         static void doStatCommand(void* shared_ptr, StatCmd cmd, boost::any& arg,
             const std::vector<std::string>& enumNames,
             const std::vector<std::string>& dimensionNames,
             int dimension_idx)
          {
-            traits<stat_type>::doCommand(shared_ptr, cmd, arg,
+            traits<stat_type>::doStatCommand(shared_ptr, cmd, arg,
                   enumNames, dimensionNames, dimension_idx);
          }
       };
@@ -86,7 +86,7 @@ namespace stat_log
          write_idx(shared_ptr, idx, args...);
       }
 
-      static void doCommand(void* shared_ptr, StatCmd cmd, boost::any& arg,
+      static void doStatCommand(void* shared_ptr, StatCmd cmd, boost::any& arg,
             const std::vector<std::string>& enumNames,
             const std::vector<std::string>& dimensionNames,
             int dimension_idx)
@@ -98,7 +98,7 @@ namespace stat_log
          std::cout << std::dec << "[";
          for(auto i = 0; i < Size; ++i)
          {
-            stat_array_detail::traits<Repr>::doCommand((void*)&theArray[i], cmd, arg,
+            stat_array_detail::traits<Repr>::doStatCommand((void*)&theArray[i], cmd, arg,
                   enumNames, dimensionNames, dimension_idx+1);
             if(i < Size - 1)
                std::cout << ", ";
@@ -123,7 +123,7 @@ namespace stat_log
          StatArray<N,Repr>::write(child_ptr, args...);
       }
 
-      static void doCommand(void* shared_ptr, StatCmd cmd, boost::any& arg,
+      static void doStatCommand(void* shared_ptr, StatCmd cmd, boost::any& arg,
             const std::vector<std::string>& enumNames,
             const std::vector<std::string>& dimensionNames,
             int dimension_idx)
@@ -139,7 +139,7 @@ namespace stat_log
          for(auto i = 0; i < Size; ++i)
          {
             auto child_ptr = reinterpret_cast<void*>(&theArray[i]);
-            StatArray<N,Repr>::doCommand(child_ptr, cmd, arg,
+            StatArray<N,Repr>::doStatCommand(child_ptr, cmd, arg,
                   enumNames, dimensionNames, dimension_idx+1);
             if(i < Size - 1)
                std::cout << ", ";

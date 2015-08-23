@@ -1,13 +1,22 @@
 #include "common.h"
+#include "hw_intf.h"
+#include <memory>
 
 constexpr bool IsOperational = true;
 
 template <>
 void initializeStatistics<IsOperational>()
 {
-   //TODO: pass the logger to init()
-   stat_log::getStatSingleton<OpStatHwIntf>().init(STAT_LOG_HW_INTF_SHM_NAME);
-   stat_log::getStatSingleton<OpStatMacSis>().init(STAT_LOG_MAC_SIS_SHM_NAME);
+   auto logger = std::make_shared<LoggerGenerator>(STAT_LOG_LOGGER_NAME,
+         STAT_LOG_LOGGER_SIZE_BYTES);
+
+   auto& hwIntfStat = stat_log::getStatSingleton<OpStatHwIntf>();
+   hwIntfStat.init(STAT_LOG_HW_INTF_SHM_NAME);
+   hwIntfStat.addLogger(logger);
+
+   auto& macSisStat = stat_log::getStatSingleton<OpStatMacSis>();
+   macSisStat.init(STAT_LOG_HW_INTF_SHM_NAME);
+   macSisStat.addLogger(logger);
 }
 
 
@@ -19,15 +28,12 @@ int main(int argc, char** argv)
    auto& macSisStat = getStatSingleton<OpStatMacSis>();
    auto& hwIntfStat = getStatSingleton<OpStatHwIntf>();
 
-   macSisStat.theLogger = &getLoggerRef();
-   hwIntfStat.theLogger = &getLoggerRef();
-
    macSisStat.writeStat<SIS::MAC_PKTS_DOWN_TAG>(88);
    hwIntfStat.writeStat<HW_INTERFACE::MISC_FPGA_FAULT_TAG>(2);
    hwIntfStat.writeStat<HW_INTERFACE::MISC_FPGA_FAULT_TAG>(2);
 
-   macSisStat.testLog() << "HELLO from MAC";
-   hwIntfStat.testLog() << "HELLO from HW";
+   macSisStat.getInfoLog<MAC>() << "HELLO from MAC";
+   hwIntfStat.getAlertLog<HW_INTERFACE>() << "HELLO from HW";
 
    std::this_thread::sleep_for(std::chrono::seconds{10});
    macSisStat.stop();

@@ -1,9 +1,2 @@
-#include "common.h"
-#include "hw_intf.h"
-
-LoggerGenerator& getLoggerRef()
-{
-   static LoggerGenerator theLogger;
-   return theLogger;
-}
-
+//Nothing in this file but the build system requires
+// a library per test case ...

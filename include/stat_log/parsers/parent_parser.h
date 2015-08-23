@@ -4,10 +4,13 @@
 #include "stat_log/parsers/leaf_parser.h"
 #include "stat_log/util/utils.h"
 
+#include <boost/lexical_cast.hpp>
+
 namespace stat_log
 {
 
 
+//DoCmd specialization for non-leaf nodes
 template<typename Stat>
 struct DoCmd<Stat, true>
 {
@@ -19,13 +22,18 @@ struct DoCmd<Stat, true>
       using Parent = typename TagNode::parent;
       using Tag = typename TagNode::tag;
       std::cout << TagNode::name << std::endl;
+      if(cmd == StatCmd::LOG_LEVEL)
+      {
+         std::cout << "LOG_LEVEL cmd for node " << TagNode::name << std::endl;
+         stat.template sendCommand<Tag>(cmd, cmd_arg);
+      }
       for_each(Children{}, [&](auto tag_node)
-         {
-            using ChildTagNode = decltype(tag_node);
-            using IsParent = typename detail::is_parent<ChildTagNode>;
-            using TheDoCmd = DoCmd<Stat, IsParent::value>;
-            TheDoCmd::template Go<ChildTagNode>(stat, cmd, cmd_arg);
-         });
+      {
+         using ChildTagNode = decltype(tag_node);
+         using IsParent = typename detail::is_parent<ChildTagNode>;
+         using TheDoCmd = DoCmd<Stat, IsParent::value>;
+         TheDoCmd::template Go<ChildTagNode>(stat, cmd, cmd_arg);
+      });
    }
 };
 
@@ -60,6 +68,39 @@ processCommands(Stat& stat, const std::string& user_cmds)
       detail::indent(TagNode::depth);
       using Parent = typename TagNode::parent;
       std::cout << TagNode::name << std::endl;
+   }
+   if(vm.count("log-level"))
+   {
+      //Args: <LoggerIdx> [<LogLevel>]
+      //No LogLevel arg will print the current log level
+      //TODO: fill in cmd_arg with the log_level
+      auto arg_vec = vm["log-level"].as<std::vector<std::string>>();
+      int logger_idx = 0;
+      if(arg_vec.size() == 0 || arg_vec.size() > 2)
+      {
+         std::cerr << "Invalid number for arguments!\n";
+         return;
+      }
+      try
+      {
+         logger_idx = boost::lexical_cast<int>(arg_vec[0]);
+      }
+      catch(boost::bad_lexical_cast&)
+      {
+         std::cerr << "Invalid logger idx!\n";
+      }
+      LogLevelCommand logCmd;
+      if(arg_vec.size() == 2)
+      {
+         logCmd.new_log_level = arg_vec[1];
+         logCmd.set_log_level = true;
+      }
+      logCmd.logger_idx = logger_idx;
+   }
+   if(vm.count("output-log"))
+   {
+      //TODO: extract the user params
+      stat.outputLog(0, "output.txt");
    }
    if(cmd != StatCmd::NO_CMD)
    {

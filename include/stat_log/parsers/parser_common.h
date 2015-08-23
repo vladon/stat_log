@@ -27,11 +27,19 @@ enum class StatCmd
    DUMP_STAT,
    CLEAR_STAT,
    DUMP_TIMESERIES,
+   LOG_LEVEL,
 };
 
 
 template<typename Stat, bool IsParent>
 struct DoCmd;
+
+struct LogLevelCommand
+{
+   bool set_log_level = false;
+   int logger_idx = 0;
+   std::string new_log_level = "";
+};
 }
 
 

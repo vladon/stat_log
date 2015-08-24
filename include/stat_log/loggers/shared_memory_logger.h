@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <chrono>
 #include <ostream>
+#include <mutex>
 
 namespace stat_log
 {
@@ -22,6 +23,10 @@ namespace stat_log
                std::chrono::microseconds time_stamp_us);
 
          boost::interprocess::mapped_region region;
+         std::mutex mtx;
+         char* shm_ptr;
+         std::size_t currentLogEntry;
+         const std::size_t numLogEntries;
    };
 
    class shared_mem_logger_retriever : public LoggerRetriever
@@ -31,12 +36,14 @@ namespace stat_log
                std::size_t shm_size);
 
          void getLog(
-               std::ostream&& output,
+               std::ostream& output,
                bool show_tag,
                bool show_time_stamp,
                bool show_log_level);
 
       private:
          boost::interprocess::mapped_region region;
+         const char* shm_ptr;
+         const std::size_t numLogEntries;
    };
 }

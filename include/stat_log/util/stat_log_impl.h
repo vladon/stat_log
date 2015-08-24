@@ -262,8 +262,10 @@ namespace detail
          });
          shm_backend.setParams(shm_name, total_shm_size, IsOperational);
          auto shm_start = shm_backend.getMemoryPtr();
+#if 0
          std::cout << std::dec <<  "SHM size = " << total_shm_size
             <<" , shm_start = " << std::hex << (long int)shm_start << std::endl;
+#endif
          auto shm_ptr = shm_start;
 
          //Next, need to inform each node theStats about its location

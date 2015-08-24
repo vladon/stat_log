@@ -18,7 +18,8 @@ namespace stat_log
                 ,name.c_str()
                 ,read_write                   //read-write mode
                );
-            shm_obj.truncate(size);
+            if(is_operational)
+               shm_obj.truncate(size);
             region = mapped_region{shm_obj, read_write};
             if(is_operational)
                std::memset(region.get_address(), 0, size);

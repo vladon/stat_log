@@ -16,6 +16,7 @@ namespace stat_log
 
    namespace detail
    {
+      //We support a maximum of 4 loggers
       using LogControlStorage = std::array<unsigned char, 4>;
 
       struct LogOpProxy
@@ -61,13 +62,12 @@ namespace stat_log
                int log_idx = logLevelCmd.logger_idx;
                if(logLevelCmd.set_log_level)
                {
-                  assert(log_idx <= SharedType{}.size());
+                  assert(log_idx < SharedType{}.size());
 
                   auto it = std::find(LogLevelNames.begin(), LogLevelNames.end(),
                         logLevelCmd.new_log_level);
                   if(it != LogLevelNames.end())
                   {
-                     std::cout << "SETTING LOG LEVEL to " << logLevelCmd.new_log_level << std::endl;
                      (*shared_ptr)[log_idx] = std::distance(LogLevelNames.begin(), it);
                   }
                   else
@@ -107,7 +107,7 @@ namespace stat_log
    {
       public:
       virtual void getLog(
-            std::ostream&& output,
+            std::ostream& output,
             bool show_tag,
             bool show_time_stamp,
             bool show_log_level) = 0;

@@ -62,4 +62,4 @@ namespace stat_log
 
 #define STAT_LOG_SHM_NAME "stat_log"
 #define STAT_LOG_LOGGER_NAME "SHM_LOGGER1"
-#define STAT_LOG_LOGGER_SIZE_BYTES 32768
+#define STAT_LOG_LOGGER_SIZE_BYTES 4194304

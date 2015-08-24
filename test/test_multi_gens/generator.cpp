@@ -32,11 +32,8 @@ int main(int argc, char** argv)
    hwIntfStat.writeStat<HW_INTERFACE::MISC_FPGA_FAULT_TAG>(2);
    hwIntfStat.writeStat<HW_INTERFACE::MISC_FPGA_FAULT_TAG>(2);
 
-#if 1
    macSisStat.getInfoLog<MAC>() << "HELLO from MAC";
    hwIntfStat.getAlertLog<HW_INTERFACE>() << "HELLO from HW";
-#endif
-
 
    while(true)
    {

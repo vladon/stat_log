@@ -24,7 +24,8 @@ struct DoCmd<Stat, true>
       std::cout << TagNode::name << std::endl;
       if(cmd == StatCmd::LOG_LEVEL)
       {
-         std::cout << "LOG_LEVEL cmd for node " << TagNode::name << std::endl;
+         detail::indent(TagNode::depth);
+         std::cout << "\t";
          stat.template sendCommand<Tag>(cmd, cmd_arg);
       }
       for_each(Children{}, [&](auto tag_node)
@@ -44,7 +45,6 @@ processCommands(Stat& stat, const std::string& user_cmds)
 {
    namespace po = boost::program_options;
    using namespace boost::fusion;
-   std::cout << "PROCESS CMDS, node = " << TagNode::name << std::endl;
 
    auto desc = detail::getParentOptions();
    po::variables_map vm;
@@ -71,7 +71,6 @@ processCommands(Stat& stat, const std::string& user_cmds)
    }
    if(vm.count("log-level"))
    {
-      std::cout << "log-level, tagNode = " << TagNode::name << std::endl;
       //Args: <LoggerIdx> [<LogLevel>]
       //No LogLevel arg will print the current log level
       auto arg_vec = vm["log-level"].as<std::vector<std::string>>();
@@ -102,8 +101,24 @@ processCommands(Stat& stat, const std::string& user_cmds)
    }
    if(vm.count("output-log"))
    {
-      //TODO: extract the user params
-      stat.outputLog(0, "output.txt");
+      auto arg_vec = vm["output-log"].as<std::vector<std::string>>();
+      std::string output_file;
+      int logger_idx = 0;
+      if(arg_vec.size() >  0)
+      {
+         try
+         {
+            logger_idx = boost::lexical_cast<int>(arg_vec[0]);
+         }
+         catch(boost::bad_lexical_cast&)
+         {
+            std::cerr << "Invalid logger idx!\n";
+         }
+      }
+      if(arg_vec.size() > 1)
+         output_file = arg_vec[1];
+
+      stat.outputLog(logger_idx, output_file);
    }
    if(cmd != StatCmd::NO_CMD)
    {

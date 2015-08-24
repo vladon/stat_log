@@ -145,9 +145,7 @@ struct LogStatControl :
          user_strings.push_back(argv[i]);
 
       std::string user_cmd_line = boost::algorithm::join(user_strings, " ");
-      std::cout << "User cmd line = " << user_cmd_line << std::endl;
       std::string component_str = getComponentName(user_cmd_line);
-      std::cout << "COMPONENT = " << component_str << std::endl;
       parse<TagHierarchy>(*this, component_str, user_cmd_line);
    }
 
@@ -174,13 +172,23 @@ struct LogStatControl :
    void outputLog(int logger_idx, const std::string& output_filename)
    {
       assert(logger_idx <= loggers.size());
-      std::fstream output{output_filename, std::ios::out};
+      std::ostream* output = &std::cout;
+      std::fstream output_file;
+      if(!output_filename.empty())
+      {
+         output_file.open(output_filename, std::fstream::out);
+         output = &output_file;
+      }
+
       //TODO: assign boolean flags as appropriate
-      loggers[logger_idx]->getLog(std::move(output),
+      loggers[logger_idx]->getLog(*output,
             true, //show_tag
             true, //show_time_stamp
             true  //show_log_level
             );
+      if(output_file.is_open())
+         output_file.close();
+      std::exit(0);
    }
 
    void doInit()

@@ -24,8 +24,14 @@ namespace detail
          ("component", po::value<std::string>()->default_value(""),
           "TODO")
 
-         ("list-stats", po::bool_switch()->default_value(false),
-          "List all statistics")
+         ("dump-stats", po::bool_switch()->default_value(false),
+          "Dump all statistics")
+
+         ("stat-types", po::bool_switch()->default_value(false),
+          "Print the type of each statistic.")
+
+         ("clear-stats", po::bool_switch()->default_value(false),
+          "Zero out statistics.")
 
          ("log-level", po::value<std::vector<std::string>>()->multitoken()->zero_tokens(),
           "Set/Show per component log level. Args\n"

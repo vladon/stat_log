@@ -55,11 +55,22 @@ namespace detail
       {
          auto ptr = reinterpret_cast<Repr*>(shared_ptr);
          //TODO: handle all commands
-         auto val = *ptr;
-         if(val >= 0 && val < enumNames.size())
-            std::cout << enumNames[val];
-         else
-            std::cout << std::dec << (unsigned long int)val;
+         auto& val = *ptr;
+         if(cmd == StatCmd::DUMP_STAT)
+         {
+            if(val >= 0 && val < enumNames.size())
+               std::cout << enumNames[val];
+            else
+               std::cout << std::dec << (unsigned long int)val;
+         }
+         else if(cmd == StatCmd::PRINT_STAT_TYPE)
+         {
+            std::cout << "Simple Stat";
+         }
+         else if(cmd == StatCmd::CLEAR_STAT)
+         {
+            val = 0;
+         }
       }
    };
 

@@ -30,6 +30,19 @@ enum class StatCmd
    LOG_LEVEL,
 };
 
+inline bool printingRequired(StatCmd cmd, bool is_parent)
+{
+   switch(cmd)
+   {
+      case StatCmd::PRINT_STAT_TYPE:
+      case StatCmd::DUMP_STAT:
+         return true;
+      case StatCmd::LOG_LEVEL:
+         return is_parent;
+      default:
+         return false;
+   }
+}
 
 template<typename Stat, bool IsParent>
 struct DoCmd;

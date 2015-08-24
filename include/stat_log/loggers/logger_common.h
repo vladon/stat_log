@@ -60,25 +60,23 @@ namespace stat_log
             {
                auto logLevelCmd = boost::any_cast<LogLevelCommand>(cmd_arg);
                int log_idx = logLevelCmd.logger_idx;
+               assert(log_idx < SharedType{}.size());
+               auto& log_level_idx = (*shared_ptr)[log_idx];
                if(logLevelCmd.set_log_level)
                {
-                  assert(log_idx < SharedType{}.size());
-
+                  std::cout << "PREV_LOG_LEVEL = " << LogLevelNames[log_level_idx] << ", ";
                   auto it = std::find(LogLevelNames.begin(), LogLevelNames.end(),
                         logLevelCmd.new_log_level);
                   if(it != LogLevelNames.end())
                   {
-                     (*shared_ptr)[log_idx] = std::distance(LogLevelNames.begin(), it);
+                     log_level_idx = std::distance(LogLevelNames.begin(), it);
                   }
                   else
                   {
                      std::cerr << "Invalid log level: " << logLevelCmd.new_log_level << std::endl;
                   }
                }
-               else
-               {
-                  std::cout << "LOG LEVEL = " << (int)(*shared_ptr)[log_idx] << std::endl;
-               }
+               std::cout << "LOG LEVEL = " << LogLevelNames[log_level_idx] << std::endl;
             }
          }
       };

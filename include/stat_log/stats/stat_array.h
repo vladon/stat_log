@@ -95,15 +95,22 @@ namespace stat_log
          if(dimension_idx == 0 && !dimensionNames.empty())
             std::cout << dimensionNames[0] << "\n";
          //TODO: handle all commands
-         std::cout << std::dec << "[";
+         if(printingRequired(cmd, false))
+         {
+            std::cout << "STAT_ARRAY" << std::endl;
+            std::cout << std::dec << "[";
+         }
          for(auto i = 0; i < Size; ++i)
          {
             stat_array_detail::traits<Repr>::doStatCommand((void*)&theArray[i], cmd, arg,
                   enumNames, dimensionNames, dimension_idx+1);
-            if(i < Size - 1)
-               std::cout << ", ";
-            else
-               std::cout << "]";
+            if(printingRequired(cmd, false))
+            {
+               if(i < Size - 1)
+                  std::cout << ", ";
+               else
+                  std::cout << "]";
+            }
          }
       }
    };
@@ -130,21 +137,28 @@ namespace stat_log
       {
          auto& theArray = *reinterpret_cast<SharedType*>(shared_ptr);
          //TODO: handle all commands
-         if(dimension_idx == 0 && dimensionNames.size() == 2)
+         if(printingRequired(cmd, false))
          {
-            std::cout << "X = " << dimensionNames[0]
-               << ", Y = " << dimensionNames[1] << std::endl;
+            std::cout << "STAT_ARRAY" << std::endl;
+            if(dimension_idx == 0 && dimensionNames.size() == 2)
+            {
+               std::cout << "X = " << dimensionNames[0]
+                  << ", Y = " << dimensionNames[1] << std::endl;
+            }
+            std::cout << std::dec << "[";
          }
-         std::cout << std::dec << "[";
          for(auto i = 0; i < Size; ++i)
          {
             auto child_ptr = reinterpret_cast<void*>(&theArray[i]);
             StatArray<N,Repr>::doStatCommand(child_ptr, cmd, arg,
                   enumNames, dimensionNames, dimension_idx+1);
-            if(i < Size - 1)
-               std::cout << ", ";
-            else
-               std::cout << "]";
+            if(printingRequired(cmd, false))
+            {
+               if(i < Size - 1)
+                  std::cout << ", ";
+               else
+                  std::cout << "]";
+            }
          }
       }
    };

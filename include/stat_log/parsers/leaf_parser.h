@@ -13,15 +13,19 @@ struct DoCmd<Stat, false>
    template <typename TagNode>
    static void Go(Stat& stat, StatCmd cmd, boost::any& cmd_arg)
    {
-      if(cmd == StatCmd::PRINT_STAT_TYPE)
+      using Parent = typename TagNode::parent;
+      using Tag = typename TagNode::tag;
+
+      if(printingRequired(cmd, false))
       {
          detail::indent(TagNode::depth);
-         using Parent = typename TagNode::parent;
-         using Tag = typename TagNode::tag;
          std::cout << TagNode::name << std::endl;
          detail::indent(TagNode::depth);
          std::cout << "\t";
-         stat.template sendCommand<Tag>(cmd, cmd_arg);
+      }
+      stat.template sendCommand<Tag>(cmd, cmd_arg);
+      if(printingRequired(cmd, false))
+      {
          std::cout << "\n";
       }
    }

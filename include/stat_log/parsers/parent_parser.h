@@ -18,10 +18,13 @@ struct DoCmd<Stat, true>
    static void Go(Stat& stat, StatCmd cmd, boost::any& cmd_arg)
    {
       using Children = typename TagNode::child_list;
-      detail::indent(TagNode::depth);
       using Parent = typename TagNode::parent;
       using Tag = typename TagNode::tag;
-      std::cout << TagNode::name << std::endl;
+      if(printingRequired(cmd, true))
+      {
+         detail::indent(TagNode::depth);
+         std::cout << TagNode::name << std::endl;
+      }
       if(cmd == StatCmd::LOG_LEVEL)
       {
          detail::indent(TagNode::depth);
@@ -56,20 +59,32 @@ processCommands(Stat& stat, const std::string& user_cmds)
    if(vm.count("help"))
    {
       std::cout << desc << std::endl;
+      std::exit(0);
    }
 
    auto cmd = StatCmd::NO_CMD;
    boost::any cmd_arg;
    using Children = typename TagNode::child_list;
 
-   if(vm["list-stats"].as<bool>())
+   if(vm["stat-types"].as<bool>())
    {
       cmd = StatCmd::PRINT_STAT_TYPE;
       detail::indent(TagNode::depth);
       using Parent = typename TagNode::parent;
       std::cout << TagNode::name << std::endl;
    }
-   if(vm.count("log-level"))
+   else if(vm["dump-stats"].as<bool>())
+   {
+      cmd = StatCmd::DUMP_STAT;
+      detail::indent(TagNode::depth);
+      using Parent = typename TagNode::parent;
+      std::cout << TagNode::name << std::endl;
+   }
+   else if(vm["clear-stats"].as<bool>())
+   {
+      cmd = StatCmd::CLEAR_STAT;
+   }
+   else if(vm.count("log-level"))
    {
       //Args: <LoggerIdx> [<LogLevel>]
       //No LogLevel arg will print the current log level
@@ -78,7 +93,7 @@ processCommands(Stat& stat, const std::string& user_cmds)
       if(arg_vec.size() == 0 || arg_vec.size() > 2)
       {
          std::cerr << "Invalid number for arguments!\n";
-         return;
+         std::exit(1);
       }
       try
       {
@@ -98,8 +113,9 @@ processCommands(Stat& stat, const std::string& user_cmds)
       cmd = StatCmd::LOG_LEVEL;
       cmd_arg = logCmd;
       DoCmd<Stat, true>::template Go<TagNode>(stat, cmd, cmd_arg);
+      cmd = StatCmd::NO_CMD;
    }
-   if(vm.count("output-log"))
+   else if(vm.count("output-log"))
    {
       auto arg_vec = vm["output-log"].as<std::vector<std::string>>();
       std::string output_file;

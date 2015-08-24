@@ -5,6 +5,7 @@
 #include <chrono>
 #include <array>
 #include <ostream>
+#include <boost/any.hpp>
 
 namespace stat_log
 {
@@ -104,11 +105,7 @@ namespace stat_log
    class LoggerRetriever
    {
       public:
-      virtual void getLog(
-            std::ostream& output,
-            bool show_tag,
-            bool show_time_stamp,
-            bool show_log_level) = 0;
+      virtual void getLog(boost::any& log_arg) = 0;
    };
 
 

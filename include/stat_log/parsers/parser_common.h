@@ -53,6 +53,14 @@ struct LogLevelCommand
    int logger_idx = 0;
    std::string new_log_level = "";
 };
+
+struct LogOutputCommand
+{
+   std::string output_filename;
+   bool show_tag;
+   bool show_time_stamp;
+   bool show_log_level;
+};
 }
 
 

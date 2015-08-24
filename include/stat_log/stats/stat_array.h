@@ -97,7 +97,7 @@ namespace stat_log
          //TODO: handle all commands
          if(printingRequired(cmd, false))
          {
-            std::cout << "STAT_ARRAY" << std::endl;
+            std::cout << "STAT_ARRAY: " << std::endl;
             std::cout << std::dec << "[";
          }
          for(auto i = 0; i < Size; ++i)
@@ -139,7 +139,10 @@ namespace stat_log
          //TODO: handle all commands
          if(printingRequired(cmd, false))
          {
-            std::cout << "STAT_ARRAY" << std::endl;
+            if(cmd == StatCmd::PRINT_STAT_TYPES)
+            {
+               std::cout << "STAT_ARRAY" << std::endl;
+            }
             if(dimension_idx == 0 && dimensionNames.size() == 2)
             {
                std::cout << "X = " << dimensionNames[0]

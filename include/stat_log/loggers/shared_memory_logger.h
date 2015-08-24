@@ -8,6 +8,7 @@
 #include <chrono>
 #include <ostream>
 #include <mutex>
+#include <boost/any.hpp>
 
 namespace stat_log
 {
@@ -35,11 +36,7 @@ namespace stat_log
          shared_mem_logger_retriever(const std::string& shm_name,
                std::size_t shm_size);
 
-         void getLog(
-               std::ostream& output,
-               bool show_tag,
-               bool show_time_stamp,
-               bool show_log_level);
+         void getLog(boost::any& log_cmd);
 
       private:
          boost::interprocess::mapped_region region;

@@ -10,7 +10,6 @@
 #include <chrono>
 #include <memory>
 #include <vector>
-#include <fstream>
 
 namespace stat_log
 {
@@ -169,25 +168,10 @@ struct LogStatControl :
          .theProxy.dimensionNames = dimNames;
    }
 
-   void outputLog(int logger_idx, const std::string& output_filename)
+   void outputLog(int logger_idx, boost::any& log_args)//int logger_idx, const std::string& output_filename)
    {
       assert(logger_idx <= loggers.size());
-      std::ostream* output = &std::cout;
-      std::fstream output_file;
-      if(!output_filename.empty())
-      {
-         output_file.open(output_filename, std::fstream::out);
-         output = &output_file;
-      }
-
-      //TODO: assign boolean flags as appropriate
-      loggers[logger_idx]->getLog(*output,
-            true, //show_tag
-            true, //show_time_stamp
-            true  //show_log_level
-            );
-      if(output_file.is_open())
-         output_file.close();
+      loggers[logger_idx]->getLog(log_args);
       std::exit(0);
    }
 

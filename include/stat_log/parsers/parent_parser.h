@@ -133,8 +133,14 @@ processCommands(Stat& stat, const std::string& user_cmds)
       }
       if(arg_vec.size() > 1)
          output_file = arg_vec[1];
-
-      stat.outputLog(logger_idx, output_file);
+      LogOutputCommand log_cmd;
+      log_cmd.output_filename = output_file;
+      //TODO: make viewing tags, timestamps and log_levels configurable.
+      log_cmd.show_tag = true;
+      log_cmd.show_time_stamp = true;
+      log_cmd.show_log_level = true;
+      boost::any cmd_any = log_cmd;
+      stat.outputLog(logger_idx, cmd_any);
    }
    if(cmd != StatCmd::NO_CMD)
    {

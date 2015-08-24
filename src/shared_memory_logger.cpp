@@ -1,5 +1,6 @@
 #include "stat_log/loggers/shared_memory_logger.h"
 #include <cstring>
+#include <fstream>
 
 using namespace stat_log;
 using std::size_t;
@@ -125,12 +126,21 @@ shared_mem_logger_retriever::shared_mem_logger_retriever(
 }
 
 void
-shared_mem_logger_retriever::getLog(
-               std::ostream& output,
-               bool show_tag,
-               bool show_time_stamp,
-               bool show_log_level)
+shared_mem_logger_retriever::getLog(boost::any& log_args)
 {
+   auto log_params = boost::any_cast<LogOutputCommand>(log_args);
+   std::ostream* output_ptr = &std::cout;
+   std::fstream output_file;
+   if(!log_params.output_filename.empty())
+   {
+      output_file.open(log_params.output_filename, std::fstream::out);
+      output_ptr = &output_file;
+   }
+   auto& output = *output_ptr;
+   bool show_tag = log_params.show_tag;
+   bool show_time_stamp = log_params.show_time_stamp;
+   bool show_log_level = log_params.show_log_level;
+
    //1. Copy the logging shm to a temporary buffer to avoid a possible race
    //   condition (note: this may not be enough to avoid all race conditions
    //   between the generator and controlling processes. Consider additional
@@ -226,4 +236,6 @@ shared_mem_logger_retriever::getLog(
       }
       output << std::endl;
    }
+   if(output_file.is_open())
+      output_file.close();
 }

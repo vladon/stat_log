@@ -30,8 +30,7 @@ namespace detail
 
 template <typename UserStatH>
 struct LogStatOperational :
-   detail::LogStatBase<UserStatH, true, LogStatOperational<UserStatH>
-   >
+   detail::LogStatBase<UserStatH, true, LogStatOperational<UserStatH>>
 {
    template <typename LogTag>
    LogGenProxy getLog(std::size_t log_idx, int log_level)
@@ -44,12 +43,13 @@ struct LogStatOperational :
             "Require a parent_node for getLog!");
 
       auto cur_log_level = log_hdl.theProxy.getLevel(log_idx);
-      std::cout << "Current log level is " << cur_log_level << std::endl;
+      std::cout << "Current log level is " << (int)cur_log_level << std::endl;
       return LogGenProxy {
          *loggers[log_idx],
          log_level >= cur_log_level,
-         "TEST_TAG_NAME", //TODO: need to map the LogTag to a name
-         "TEST_LOG_LEVEL"};
+         LogHdlType::tag_node::name,
+         LogLevelNames[log_level]
+      };
    }
 
    template <typename LogTag>
@@ -129,9 +129,7 @@ struct LogStatOperational :
 
 template <typename UserStatH>
 struct LogStatControl :
-   detail::LogStatBase<
-      UserStatH, false, LogStatControl<UserStatH>
-   >
+   detail::LogStatBase<UserStatH, false, LogStatControl<UserStatH>>
 {
    using BaseClass = detail::LogStatBase<
       UserStatH, false, LogStatControl<UserStatH>>;

@@ -9,6 +9,11 @@
 namespace stat_log
 {
 
+   constexpr std::array<const char* const,  4> LogLevelNames
+   {{
+       "DEBUG", "INFO", "ALERT", "ERROR"
+   }};
+
    namespace detail
    {
       using LogControlStorage = std::array<unsigned char, 4>;
@@ -57,9 +62,18 @@ namespace stat_log
                if(logLevelCmd.set_log_level)
                {
                   assert(log_idx <= SharedType{}.size());
-                  std::cout << "SETTING LOG LEVEL to " << logLevelCmd.new_log_level;
-                  //TODO: convert new_log_level to a number ...
-                  (*shared_ptr)[log_idx] = 0;
+
+                  auto it = std::find(LogLevelNames.begin(), LogLevelNames.end(),
+                        logLevelCmd.new_log_level);
+                  if(it != LogLevelNames.end())
+                  {
+                     std::cout << "SETTING LOG LEVEL to " << logLevelCmd.new_log_level << std::endl;
+                     (*shared_ptr)[log_idx] = std::distance(LogLevelNames.begin(), it);
+                  }
+                  else
+                  {
+                     std::cerr << "Invalid log level: " << logLevelCmd.new_log_level << std::endl;
+                  }
                }
                else
                {
@@ -123,6 +137,7 @@ namespace stat_log
          std::stringstream ss;
          ss << value;
          theLogger.writeData(ss.str(), TagName, LogLevelName);
+         return *this;
       }
 
       void hexDump(const char* buf, std::size_t len, const std::string& label)

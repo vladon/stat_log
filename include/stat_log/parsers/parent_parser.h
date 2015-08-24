@@ -44,7 +44,7 @@ processCommands(Stat& stat, const std::string& user_cmds)
 {
    namespace po = boost::program_options;
    using namespace boost::fusion;
-   std::cout << "PROCESS CMDS parent" << std::endl;
+   std::cout << "PROCESS CMDS, node = " << TagNode::name << std::endl;
 
    auto desc = detail::getParentOptions();
    po::variables_map vm;
@@ -71,9 +71,9 @@ processCommands(Stat& stat, const std::string& user_cmds)
    }
    if(vm.count("log-level"))
    {
+      std::cout << "log-level, tagNode = " << TagNode::name << std::endl;
       //Args: <LoggerIdx> [<LogLevel>]
       //No LogLevel arg will print the current log level
-      //TODO: fill in cmd_arg with the log_level
       auto arg_vec = vm["log-level"].as<std::vector<std::string>>();
       int logger_idx = 0;
       if(arg_vec.size() == 0 || arg_vec.size() > 2)
@@ -96,6 +96,9 @@ processCommands(Stat& stat, const std::string& user_cmds)
          logCmd.set_log_level = true;
       }
       logCmd.logger_idx = logger_idx;
+      cmd = StatCmd::LOG_LEVEL;
+      cmd_arg = logCmd;
+      DoCmd<Stat, true>::template Go<TagNode>(stat, cmd, cmd_arg);
    }
    if(vm.count("output-log"))
    {

@@ -34,10 +34,11 @@ namespace detail
 
 
    //++++ LOGGER CONTAINERS ++++++++++
-   template <typename Tag>
+   template <typename TagNode>
    struct GenericOpLogger
    {
-      using tag = Tag;
+      using tag_node = TagNode;
+      using tag = typename tag_node::tag;
       // using matching_tags = MatchingTags;
       void setSharedPtr(void* ptr)
       {
@@ -53,10 +54,11 @@ namespace detail
       static constexpr bool IsParent = true;
    };
 
-   template <typename Tag>
+   template <typename TagNode>
    struct GenericControlLogger
    {
-      using tag = Tag;
+      using tag_node = TagNode;
+      using tag = typename tag_node::tag;
       // using matching_tags = MatchingTags;
       void setSharedPtr(void* ptr)
       {
@@ -70,10 +72,11 @@ namespace detail
    //+++++++++++++++++++++++++++++++++
 
    //++++ STATISTIC CONTAINERS ++++++++++
-   template <typename Tag>
+   template <typename TagNode>
       struct GenericOpStat
    {
-      using tag = Tag;
+      using tag_node = TagNode;
+      using tag = typename tag_node::tag;
       // using matching_tags = MatchingTags;
       static constexpr bool IsParent = false;
 
@@ -87,7 +90,7 @@ namespace detail
       {
          theProxy.setSharedPtr(ptr);
       }
-      using Proxy = OperationalStatProxy<typename stat_tag_to_type<Tag>::type>;
+      using Proxy = OperationalStatProxy<typename stat_tag_to_type<tag>::type>;
       Proxy theProxy;
 
       void doSerialize()
@@ -97,10 +100,11 @@ namespace detail
    };
 
 
-   template <typename Tag>
+   template <typename TagNode>
       struct GenericControlStat
    {
-      using tag = Tag;
+      using tag_node = TagNode;
+      using tag = typename tag_node::tag;
       // using matching_tags = MatchingTags;
       static constexpr bool IsParent = false;
 
@@ -108,7 +112,7 @@ namespace detail
       {
          theProxy.setSharedPtr(ptr);
       }
-      using Proxy = ControlStatProxy<typename stat_tag_to_type<Tag>::type>;
+      using Proxy = ControlStatProxy<typename stat_tag_to_type<tag>::type>;
       Proxy theProxy;
 
    };
@@ -131,11 +135,10 @@ namespace detail
       struct stat_inserter
       {
          //ThisStat is of type "struct TagNode"
-         using ThisTag = typename ThisStat::tag;
          using this_stat = typename std::conditional_t<
             IsOpType::value,
-            GenericOpStat<ThisTag>,
-            GenericControlStat<ThisTag>
+            GenericOpStat<ThisStat>,
+            GenericControlStat<ThisStat>
          >;
 
          //Finally add this statistic to the global tag vec
@@ -151,11 +154,10 @@ namespace detail
          using ThisLineage = typename mpl::push_front<ParentVec,
                typename TagHierarchy::tag>::type;
          using ChildTagHierarchy = typename TagHierarchy::child_list;
-         using ThisTag = typename TagHierarchy::tag;
          using this_logger = typename std::conditional_t<
                IsOpType::value,
-               GenericOpLogger<ThisTag>,
-               GenericControlLogger<ThisTag>
+               GenericOpLogger<TagHierarchy>,
+               GenericControlLogger<TagHierarchy>
             >;
 
          using UpdatedGlobalTagVec = typename mpl::push_front<

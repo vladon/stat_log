@@ -23,5 +23,6 @@ namespace stat_log
 
 
 using LoggerGenerator = stat_log::shared_mem_logger_generator;
+using LoggerRetriever = stat_log::shared_mem_logger_retriever;
 using OpStatHwIntf = stat_log::LogStatOperational<HW_INTERFACE>;
 using ControlStatHwIntf = stat_log::LogStatControl<HW_INTERFACE>;

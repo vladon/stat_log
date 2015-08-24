@@ -8,8 +8,11 @@ constexpr bool IsOperational = true;
 template <>
 void initializeStatistics<IsOperational>()
 {
-   //TODO: pass the logger to init()
-   stat_log::getStatSingleton<OpStat>().init(STAT_LOG_SHM_NAME);
+   auto logger = std::make_shared<LoggerGenerator>(STAT_LOG_LOGGER_NAME,
+         STAT_LOG_LOGGER_SIZE_BYTES);
+   auto& theStats = stat_log::getStatSingleton<OpStat>();
+   theStats.init(STAT_LOG_SHM_NAME);
+   theStats.addLogger(logger);
 }
 
 

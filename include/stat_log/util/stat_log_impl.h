@@ -32,9 +32,14 @@ namespace detail
    using namespace boost;
    using namespace boost::fusion;
 
-   template <typename Tag, typename MatchingTags>
-   struct GenericLogger
+
+   //++++ LOGGER CONTAINERS ++++++++++
+   template <typename TagNode>
+   struct GenericOpLogger
    {
+      using tag_node = TagNode;
+      using tag = typename tag_node::tag;
+      // using matching_tags = MatchingTags;
       void setSharedPtr(void* ptr)
       {
          theProxy.setSharedPtr(ptr);
@@ -44,36 +49,48 @@ namespace detail
       {
       }
 
-      using Proxy = LogControlProxy;
-      //theProxy is use to both
-      // 1. Set the log level (control) AND
-      // 2. Check the current log level (operational)
+      using Proxy = LogOpProxy;
       Proxy theProxy;
-      using matching_tags = MatchingTags;
       static constexpr bool IsParent = true;
    };
 
-   template <typename Tag, typename MatchingTags>
-   struct GenericStat
+   template <typename TagNode>
+   struct GenericControlLogger
    {
-      using matching_tags = MatchingTags;
-      static constexpr bool IsParent = false;
-   };
+      using tag_node = TagNode;
+      using tag = typename tag_node::tag;
+      // using matching_tags = MatchingTags;
+      void setSharedPtr(void* ptr)
+      {
+         theProxy.setSharedPtr(ptr);
+      }
 
-   template <typename Tag, typename MatchingTags>
-      struct GenericOpStat : GenericStat<Tag, MatchingTags>
+      using Proxy = LogControlProxy;
+      Proxy theProxy;
+      static constexpr bool IsParent = true;
+   };
+   //+++++++++++++++++++++++++++++++++
+
+   //++++ STATISTIC CONTAINERS ++++++++++
+   template <typename TagNode>
+      struct GenericOpStat
    {
+      using tag_node = TagNode;
+      using tag = typename tag_node::tag;
+      // using matching_tags = MatchingTags;
+      static constexpr bool IsParent = false;
+
       template <typename... Args>
       void writeVal(Args... args)
       {
-         this->theProxy.write(args...);
+         theProxy.write(args...);
       }
 
       void setSharedPtr(void* ptr)
       {
          theProxy.setSharedPtr(ptr);
       }
-      using Proxy = OperationalStatProxy<typename stat_tag_to_type<Tag>::type>;
+      using Proxy = OperationalStatProxy<typename stat_tag_to_type<tag>::type>;
       Proxy theProxy;
 
       void doSerialize()
@@ -83,17 +100,23 @@ namespace detail
    };
 
 
-   template <typename Tag, typename MatchingTags>
-      struct GenericControlStat : GenericStat<Tag, MatchingTags>
+   template <typename TagNode>
+      struct GenericControlStat
    {
+      using tag_node = TagNode;
+      using tag = typename tag_node::tag;
+      // using matching_tags = MatchingTags;
+      static constexpr bool IsParent = false;
+
       void setSharedPtr(void* ptr)
       {
          theProxy.setSharedPtr(ptr);
       }
-      using Proxy = ControlStatProxy<typename stat_tag_to_type<Tag>::type>;
+      using Proxy = ControlStatProxy<typename stat_tag_to_type<tag>::type>;
       Proxy theProxy;
 
    };
+   //+++++++++++++++++++++++++++++++++
 
    ///////////////
 
@@ -112,16 +135,12 @@ namespace detail
       struct stat_inserter
       {
          //ThisStat is of type "struct TagNode"
-         using ThisTag = typename ThisStat::tag;
-         //Add the entire lineage of parents to the matching tags for
-         // this statistic
-         using matching_tags =
-            typename mpl::push_front<ParentVec,ThisTag>::type;
          using this_stat = typename std::conditional_t<
-               IsOpType::value,
-               GenericOpStat<ThisTag, matching_tags>,
-               GenericControlStat<ThisTag, matching_tags>
-            >;
+            IsOpType::value,
+            GenericOpStat<ThisStat>,
+            GenericControlStat<ThisStat>
+         >;
+
          //Finally add this statistic to the global tag vec
          using type = typename mpl::push_front<GlobalTagVec, this_stat>::type;
       };
@@ -135,8 +154,11 @@ namespace detail
          using ThisLineage = typename mpl::push_front<ParentVec,
                typename TagHierarchy::tag>::type;
          using ChildTagHierarchy = typename TagHierarchy::child_list;
-         using ThisTag = typename TagHierarchy::tag;
-         using this_logger = GenericLogger<ThisTag, ThisLineage>;
+         using this_logger = typename std::conditional_t<
+               IsOpType::value,
+               GenericOpLogger<TagHierarchy>,
+               GenericControlLogger<TagHierarchy>
+            >;
 
          using UpdatedGlobalTagVec = typename mpl::push_front<
             GlobalTagVec, this_logger>::type;
@@ -169,18 +191,12 @@ namespace detail
             >::type;
       };
 
-   template <typename TagVec, typename Tag>
-      struct contains_tag
-      {
-         using type = typename mpl::contains<TagVec, Tag>::type;
-      };
-
    template <typename Tag>
       struct matches_tag
       {
          template <typename Repr>
             struct apply
-            : contains_tag<typename Repr::matching_tags, Tag>::type
+            : std::is_same<Tag, typename Repr::tag>::type
             {};
       };
 
@@ -246,8 +262,10 @@ namespace detail
          });
          shm_backend.setParams(shm_name, total_shm_size, IsOperational);
          auto shm_start = shm_backend.getMemoryPtr();
+#if 0
          std::cout << std::dec <<  "SHM size = " << total_shm_size
             <<" , shm_start = " << std::hex << (long int)shm_start << std::endl;
+#endif
          auto shm_ptr = shm_start;
 
          //Next, need to inform each node theStats about its location
@@ -275,16 +293,6 @@ namespace detail
       auto getStatHandleView(T& stats)
       {
          return boost::fusion::filter_view<T, detail::matches_tag<Tag>>(stats);
-      }
-
-   template <typename Tag, typename T>
-      auto& getValue(T& stats)
-      {
-         auto statHdlView = getStatHandleView<Tag>(stats);
-         static_assert(
-               boost::fusion::result_of::size<decltype(statHdlView)>::value == 1,
-               "getValues requires a Leaf Tag!");
-         return deref(begin(statHdlView)).getValue();
       }
 }
 }

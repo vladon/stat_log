@@ -59,7 +59,7 @@ namespace stat_log
 template <bool IsOperational>
 void initializeStatistics();
 
-LoggerGenerator& getLoggerRef();
-
 #define STAT_LOG_MAC_SIS_SHM_NAME "stat_log_mac_sis"
 #define STAT_LOG_HW_INTF_SHM_NAME "stat_log_hw_intf"
+#define STAT_LOG_LOGGER_NAME "SHM_LOGGER1"
+#define STAT_LOG_LOGGER_SIZE_BYTES 4194304

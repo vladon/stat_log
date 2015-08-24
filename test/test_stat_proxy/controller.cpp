@@ -1,10 +1,14 @@
 #include "common.h"
+
 constexpr bool IsOperational = false;
 template <>
 void initializeStatistics<IsOperational>()
 {
-   //TODO: pass the logger to init()
-   stat_log::getStatSingleton<ControlStat>().init(STAT_LOG_SHM_NAME);
+   auto logger = std::make_shared<LoggerRetriever>(STAT_LOG_LOGGER_NAME,
+         STAT_LOG_LOGGER_SIZE_BYTES);
+   auto& theStat = stat_log::getStatSingleton<ControlStat>();
+   theStat.init(STAT_LOG_SHM_NAME);
+   theStat.addLogger(logger);
 }
 
 using namespace stat_log;

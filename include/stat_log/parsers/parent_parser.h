@@ -4,10 +4,13 @@
 #include "stat_log/parsers/leaf_parser.h"
 #include "stat_log/util/utils.h"
 
+#include <boost/lexical_cast.hpp>
+
 namespace stat_log
 {
 
 
+//DoCmd specialization for non-leaf nodes
 template<typename Stat>
 struct DoCmd<Stat, true>
 {
@@ -19,13 +22,19 @@ struct DoCmd<Stat, true>
       using Parent = typename TagNode::parent;
       using Tag = typename TagNode::tag;
       std::cout << TagNode::name << std::endl;
+      if(cmd == StatCmd::LOG_LEVEL)
+      {
+         detail::indent(TagNode::depth);
+         std::cout << "\t";
+         stat.template sendCommand<Tag>(cmd, cmd_arg);
+      }
       for_each(Children{}, [&](auto tag_node)
-         {
-            using ChildTagNode = decltype(tag_node);
-            using IsParent = typename detail::is_parent<ChildTagNode>;
-            using TheDoCmd = DoCmd<Stat, IsParent::value>;
-            TheDoCmd::template Go<ChildTagNode>(stat, cmd, cmd_arg);
-         });
+      {
+         using ChildTagNode = decltype(tag_node);
+         using IsParent = typename detail::is_parent<ChildTagNode>;
+         using TheDoCmd = DoCmd<Stat, IsParent::value>;
+         TheDoCmd::template Go<ChildTagNode>(stat, cmd, cmd_arg);
+      });
    }
 };
 
@@ -36,7 +45,6 @@ processCommands(Stat& stat, const std::string& user_cmds)
 {
    namespace po = boost::program_options;
    using namespace boost::fusion;
-   std::cout << "PROCESS CMDS parent" << std::endl;
 
    auto desc = detail::getParentOptions();
    po::variables_map vm;
@@ -60,6 +68,57 @@ processCommands(Stat& stat, const std::string& user_cmds)
       detail::indent(TagNode::depth);
       using Parent = typename TagNode::parent;
       std::cout << TagNode::name << std::endl;
+   }
+   if(vm.count("log-level"))
+   {
+      //Args: <LoggerIdx> [<LogLevel>]
+      //No LogLevel arg will print the current log level
+      auto arg_vec = vm["log-level"].as<std::vector<std::string>>();
+      int logger_idx = 0;
+      if(arg_vec.size() == 0 || arg_vec.size() > 2)
+      {
+         std::cerr << "Invalid number for arguments!\n";
+         return;
+      }
+      try
+      {
+         logger_idx = boost::lexical_cast<int>(arg_vec[0]);
+      }
+      catch(boost::bad_lexical_cast&)
+      {
+         std::cerr << "Invalid logger idx!\n";
+      }
+      LogLevelCommand logCmd;
+      if(arg_vec.size() == 2)
+      {
+         logCmd.new_log_level = arg_vec[1];
+         logCmd.set_log_level = true;
+      }
+      logCmd.logger_idx = logger_idx;
+      cmd = StatCmd::LOG_LEVEL;
+      cmd_arg = logCmd;
+      DoCmd<Stat, true>::template Go<TagNode>(stat, cmd, cmd_arg);
+   }
+   if(vm.count("output-log"))
+   {
+      auto arg_vec = vm["output-log"].as<std::vector<std::string>>();
+      std::string output_file;
+      int logger_idx = 0;
+      if(arg_vec.size() >  0)
+      {
+         try
+         {
+            logger_idx = boost::lexical_cast<int>(arg_vec[0]);
+         }
+         catch(boost::bad_lexical_cast&)
+         {
+            std::cerr << "Invalid logger idx!\n";
+         }
+      }
+      if(arg_vec.size() > 1)
+         output_file = arg_vec[1];
+
+      stat.outputLog(logger_idx, output_file);
    }
    if(cmd != StatCmd::NO_CMD)
    {

@@ -1,48 +1,49 @@
 #pragma once
+#include <boost/interprocess/shared_memory_object.hpp>
+#include <boost/interprocess/mapped_region.hpp>
 #include "stat_log/loggers/logger_common.h"
 #include <iostream>
 #include <ctime>
 #include <iomanip>
 #include <chrono>
+#include <ostream>
+#include <mutex>
 
 namespace stat_log
 {
    class shared_mem_logger_generator : public LoggerGenerator
    {
-      //TODO: The constructor should take the name of the
-      // shared memory segment and the size
+      public:
+         shared_mem_logger_generator(const std::string& shm_name,
+               std::size_t shm_size);
       private:
          virtual void doWriteData(const char* buf, std::size_t len,
                const char* TagName, const char* LogLevelName,
                std::time_t time_stamp,
-               std::chrono::microseconds time_stamp_us)
-         {
-            //NOTE: localtime is NOT threadsafe, so any calls to it will
-            // only be done in "control" mode (the cout here is just for testing).
-            char mbstr[100];
-            std::strftime(mbstr, sizeof(mbstr), "%T", std::localtime(&time_stamp));
-            std::cout << std::dec
-               // << "Time = " << std::put_time(std::localtime(&time_stamp), "%T")
-               << "Time = " << mbstr
-               << "." << time_stamp_us.count()
-               << ": BUFFER = " << buf << std::endl;
+               std::chrono::microseconds time_stamp_us);
 
-            // TODO: Need to first figure out how many sub shm bufs
-            //  this log entry will require.  Then need to acquire
-            //  a lock and push the log entry to shm.
-            //NOTE: the TagName, LogLevelName, and time_stamp fields
-            // will also be written to shared memory, but will be
-            // considered metadata.  The logger-retriever can then
-            // use this metadata -- e.g. to filter out unwanted entries
-            // or to not print the time stamp along, etc.
-         }
+         boost::interprocess::mapped_region region;
+         std::mutex mtx;
+         char* shm_ptr;
+         std::size_t currentLogEntry;
+         const std::size_t numLogEntries;
    };
 
-   //TODO
-#if 0
    class shared_mem_logger_retriever : public LoggerRetriever
    {
-   };
-#endif
+      public:
+         shared_mem_logger_retriever(const std::string& shm_name,
+               std::size_t shm_size);
 
+         void getLog(
+               std::ostream& output,
+               bool show_tag,
+               bool show_time_stamp,
+               bool show_log_level);
+
+      private:
+         boost::interprocess::mapped_region region;
+         const char* shm_ptr;
+         const std::size_t numLogEntries;
+   };
 }

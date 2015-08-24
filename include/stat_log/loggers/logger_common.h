@@ -1,37 +1,85 @@
 #pragma once
 #include "stat_log/stats/stats_common.h"
+#include "stat_log/parsers/parser_common.h"
 #include <iomanip>
 #include <chrono>
+#include <array>
+#include <ostream>
 
 namespace stat_log
 {
 
+   constexpr std::array<const char* const,  4> LogLevelNames
+   {{
+       "DEBUG", "INFO", "ALERT", "ERROR"
+   }};
+
    namespace detail
    {
-      using LogControlWord = uint32_t;
+      //We support a maximum of 4 loggers
+      using LogControlStorage = std::array<unsigned char, 4>;
 
-      struct LogControlProxy
+      struct LogOpProxy
       {
-         using SharedType = LogControlWord;
+         using SharedType = LogControlStorage;
          SharedType* shared_ptr = nullptr;
          void setSharedPtr(void* ptr)
          {
             shared_ptr = reinterpret_cast<SharedType*>(ptr);
          }
 
-         void setLevel(SharedType newLevel)
+         unsigned char getLevel(int log_idx)
          {
-            *shared_ptr = newLevel;
-         }
-
-         SharedType getLevel()
-         {
-            return *shared_ptr;
+            assert(log_idx <= SharedType{}.size());
+            return (*shared_ptr)[log_idx];
          }
 
          static constexpr size_t getSharedSize()
          {
             return sizeof(SharedType);
+         }
+      };
+
+      struct LogControlProxy
+      {
+         using SharedType = LogControlStorage;
+         SharedType* shared_ptr = nullptr;
+         void setSharedPtr(void* ptr)
+         {
+            shared_ptr = reinterpret_cast<SharedType*>(ptr);
+         }
+
+         static constexpr size_t getSharedSize()
+         {
+            return sizeof(SharedType);
+         }
+
+         void doCommand(StatCmd cmd, boost::any& cmd_arg)
+         {
+            if(cmd == StatCmd::LOG_LEVEL)
+            {
+               auto logLevelCmd = boost::any_cast<LogLevelCommand>(cmd_arg);
+               int log_idx = logLevelCmd.logger_idx;
+               if(logLevelCmd.set_log_level)
+               {
+                  assert(log_idx < SharedType{}.size());
+
+                  auto it = std::find(LogLevelNames.begin(), LogLevelNames.end(),
+                        logLevelCmd.new_log_level);
+                  if(it != LogLevelNames.end())
+                  {
+                     (*shared_ptr)[log_idx] = std::distance(LogLevelNames.begin(), it);
+                  }
+                  else
+                  {
+                     std::cerr << "Invalid log level: " << logLevelCmd.new_log_level << std::endl;
+                  }
+               }
+               else
+               {
+                  std::cout << "LOG LEVEL = " << (int)(*shared_ptr)[log_idx] << std::endl;
+               }
+            }
          }
       };
    }
@@ -53,6 +101,16 @@ namespace stat_log
                const char* TagName, const char* LogLevelName,
                std::time_t time_stamp,
                std::chrono::microseconds time_stamp_us) = 0;
+   };
+
+   class LoggerRetriever
+   {
+      public:
+      virtual void getLog(
+            std::ostream& output,
+            bool show_tag,
+            bool show_time_stamp,
+            bool show_log_level) = 0;
    };
 
 
@@ -79,6 +137,7 @@ namespace stat_log
          std::stringstream ss;
          ss << value;
          theLogger.writeData(ss.str(), TagName, LogLevelName);
+         return *this;
       }
 
       void hexDump(const char* buf, std::size_t len, const std::string& label)

@@ -99,3 +99,20 @@ library with the following top-level requirements:
 TODO: work in progress (I welcome feedback even at this early stage)
 
 
+TO BUILD (native build):
+```bash
+    mkdir build
+    cd build
+    cmake ../
+    make
+```
+
+TO BUILD (arm cross compile):
+```bash
+    export SYSROOT_BASE=/path/to/arm_sysroot
+    mkdir arm_build
+    cd arm_build
+    cmake  -DCMAKE_TOOLCHAIN_FILE=../arm_toolchain.cmake  ../
+    make
+```
+

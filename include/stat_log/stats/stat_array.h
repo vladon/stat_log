@@ -139,7 +139,7 @@ namespace stat_log
          //TODO: handle all commands
          if(printingRequired(cmd, false))
          {
-            if(cmd == StatCmd::PRINT_STAT_TYPES)
+            if(cmd == StatCmd::PRINT_STAT_TYPE)
             {
                std::cout << "STAT_ARRAY" << std::endl;
             }

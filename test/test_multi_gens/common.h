@@ -18,7 +18,7 @@
 
 struct TOP_MAC_SIS
 {
-   NAME = "TOP_LEVEL";
+   SL_NAME = "TOP_LEVEL";
    using ChildTypes = boost::fusion::vector<
       MAC,
       SIS

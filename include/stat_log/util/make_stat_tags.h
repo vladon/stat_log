@@ -5,13 +5,13 @@
 //For example:
 //
 //     struct RxCountTag{
-//        NAME = "RX_COUNTERS";
+//        SL_NAME = "RX_COUNTERS";
 //     };
 //     struct CorrScoreTag{
-//        NAME = "CORR_SCORE";
+//        SL_NAME = "CORR_SCORE";
 //     };
 //     struct LinkIndTag{
-//        NAME = "LINK_IND";
+//        SL_NAME = "LINK_IND";
 //     };
 //
 //     using ChildTypes = vector<RxCountTag, CorrScoreTag, LinkIndTag>;
@@ -23,13 +23,13 @@
 //Or
 //
 //     struct RxCountTag : Base1{
-//        NAME = "RX_COUNTERS";
+//        SL_NAME = "RX_COUNTERS";
 //     };
 //     struct CorrScoreTag : Base2{
-//        NAME = "CORR_SCORE";
+//        SL_NAME = "CORR_SCORE";
 //     };
 //     struct LinkIndTag : Base3{
-//        NAME = "LINK_IND";
+//        SL_NAME = "LINK_IND";
 //     };
 //
 //     using ChildTypes = vector<RxCountTag, CorrScoreTag, LinkIndTag>;
@@ -41,13 +41,13 @@
 //Or
 //
 //     struct RxCountTag : Base{
-//        NAME = "RX_COUNTERS";
+//        SL_NAME = "RX_COUNTERS";
 //     };
 //     struct CorrScoreTag : Base{
-//        NAME = "CORR_SCORE";
+//        SL_NAME = "CORR_SCORE";
 //     };
 //     struct LinkIndTag : Base{
-//        NAME = "LINK_IND";
+//        SL_NAME = "LINK_IND";
 //     };
 //
 //     using ChildTypes = vector<RxCountTag, CorrScoreTag, LinkIndTag>;
@@ -79,7 +79,7 @@
 
 #define _MAKE_STAT_TAG_STRUCT(r, data, elem) \
  struct _MAKE_STAT_TAG(r, data, elem) { \
-       NAME = BOOST_PP_STRINGIZE(elem); \
+       SL_NAME = BOOST_PP_STRINGIZE(elem); \
           };
 
 #define MAKE_STAT_TAG_STRUCT(stat_name) \
@@ -94,7 +94,7 @@
 
 #define _MAKE_STAT_TAG_STRUCT_BASE(r, data, elem) \
  struct _MAKE_STAT_TAG(r, data, BOOST_PP_TUPLE_ELEM(2,0, elem)) : BOOST_PP_TUPLE_ELEM(2,1,elem) { \
-       NAME = BOOST_PP_STRINGIZE(BOOST_PP_TUPLE_ELEM(2,0, elem)); \
+       SL_NAME = BOOST_PP_STRINGIZE(BOOST_PP_TUPLE_ELEM(2,0, elem)); \
           };
 
 #define MAKE_STAT_TAG_STRUCT_BASE(stat_name, base) \

@@ -1,8 +1,6 @@
 #pragma once
 
-//TODO: rename this to something that is less likely
-// to collide with user code
-#define NAME static constexpr const char* name
+#define SL_NAME static constexpr const char* name
 
 namespace stat_log
 {

@@ -23,7 +23,7 @@
 
 struct TOP_STAT
 {
-   NAME = "TOP_LEVEL";
+   SL_NAME = "TOP_LEVEL";
    using ChildTypes = boost::fusion::vector<
       MAC,
       SIS,

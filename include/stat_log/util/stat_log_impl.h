@@ -203,7 +203,7 @@ namespace detail
    template <typename T, typename P, int Depth, typename C = void>
       struct TagNode
       {
-         NAME = T::name;
+         SL_NAME = T::name;
          using tag = T;
          using parent = P;
          static const int depth = Depth;
@@ -232,7 +232,7 @@ namespace detail
    {
       struct TopName
       {
-         NAME = "";
+         SL_NAME = "";
       };
       using TopNode = detail::TagNode<TopName, void, 0>;
 

@@ -5,7 +5,7 @@ struct MacBase {};
 
 struct MAC
 {
-   NAME = "MAC";
+   SL_NAME = "MAC";
    MAKE_STAT_TAGS_NAMED_BASE(
          MacBase,
       (IP_PKTS_DOWN)

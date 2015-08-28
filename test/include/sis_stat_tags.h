@@ -5,13 +5,13 @@ struct SisBase{};
 
 struct SIS
 {
-   NAME = "SIS";
+   SL_NAME = "SIS";
 
    MAKE_STAT_TAG_STRUCT_BASE(MAC_PKTS_DOWN, SisBase)
    MAKE_STAT_TAG_STRUCT_BASE(MAC_PKTS_UP, SisBase)
 
    struct PER_NBR_STATS{
-      NAME = "PER_NBR_STATS";
+      SL_NAME = "PER_NBR_STATS";
       MAKE_STAT_TAGS_NAMED_BASE(
             SisBase,
          (LINK_QUALITY)

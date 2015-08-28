@@ -1,8 +1,8 @@
 #include "stat_proxy_interface.h"
+#include "stat_log/util/compile_proxy.h"
 #include "common.h"
 #include <thread>
 #include <chrono>
-
 
 constexpr bool IsOperational = true;
 template <>
@@ -16,16 +16,19 @@ void initializeStatistics<IsOperational>()
 }
 
 
-template <typename Tag, typename ... Args>
-void writeStatProxy(Args... args)
+namespace stat_log
 {
-   stat_log::getStatSingleton<OpStat>().writeStat<Tag>(args...);
-}
+   template <typename Tag, typename ... Args>
+   void writeStat(Args... args)
+   {
+      stat_log::getStatSingleton<OpStat>().writeStat<Tag>(args...);
+   }
 
-//EXPLICIT TEMPLATE INSTANTIATIONS
-template void writeStatProxy<MAC::IP_PKTS_UP_TAG>(int val);
-template void writeStatProxy<SIS::MAC_PKTS_DOWN_TAG>(int proto_idx, int prio_idx, int val);
-template void writeStatProxy<HW_INTERFACE::MISC_FPGA_FAULT_TAG>(int val);
+   //EXPLICIT TEMPLATE INSTANTIATIONS
+   template void writeStat<MAC::IP_PKTS_UP_TAG>(int val);
+   template void writeStat<SIS::MAC_PKTS_DOWN_TAG>(int proto_idx, int prio_idx, int val);
+   template void writeStat<HW_INTERFACE::MISC_FPGA_FAULT_TAG>(int val);
+}
 
 //TODO: this will be super annoying for the user to have to define the
 // stat hierarchy AND explicitly instantiate each of them ...

@@ -3,5 +3,5 @@
 
 void genStats_HW_INTF()
 {
-   writeStatProxy<HW_INTERFACE::MISC_FPGA_FAULT_TAG>(1);
+   stat_log::writeStat<HW_INTERFACE::MISC_FPGA_FAULT_TAG>(1);
 }

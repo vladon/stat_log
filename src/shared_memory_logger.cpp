@@ -54,7 +54,7 @@ shared_mem_logger_generator::doWriteData(const char* buf, size_t len,
                std::time_t time_stamp,
                std::chrono::microseconds time_stamp_us)
 {
-#if 1
+#if 0
    //NOTE: localtime is NOT threadsafe, so any calls to it will
    // only be done in "control" mode (the cout here is just for testing).
    char mbstr[100];
@@ -80,9 +80,10 @@ shared_mem_logger_generator::doWriteData(const char* buf, size_t len,
       start_log_idx = currentLogEntry;
       currentLogEntry = (currentLogEntry + num_log_bufs) % numLogEntries;
    }
+   size_t cur_log_idx = start_log_idx;
 
-   auto log_entry_ptr = reinterpret_cast<LogBufEntry*>(shm_ptr);
-   log_entry_ptr += start_log_idx;
+   const auto log_entry_start_ptr = reinterpret_cast<LogBufEntry*>(shm_ptr);
+   auto log_entry_ptr = log_entry_start_ptr + cur_log_idx;
    auto log_hdr_ptr = reinterpret_cast<LogHeader*>(log_entry_ptr);
 
    log_hdr_ptr->commonHeader.numBlocks = num_log_bufs;
@@ -102,7 +103,8 @@ shared_mem_logger_generator::doWriteData(const char* buf, size_t len,
       bytes_to_write = std::min(len, bytes_per_log_buf-sizeof(LogHeaderCommon));
       if(bytes_to_write > 0)
       {
-         log_entry_ptr += 1;
+         cur_log_idx = (cur_log_idx + 1) % numLogEntries;
+         log_entry_ptr = log_entry_start_ptr + cur_log_idx;
          auto log_sub_hdr_ptr = reinterpret_cast<LogHeaderCommon*>(log_entry_ptr);
          log_sub_hdr_ptr->numBlocks = 0;
          data_ptr = reinterpret_cast<char*>(log_sub_hdr_ptr + 1);
@@ -208,6 +210,10 @@ shared_mem_logger_retriever::getLog(boost::any& log_args)
          auto& time_stamp_sec = std::get<0>(log_hdr_ptr->timeStamp);
          auto& time_stamp_us = std::get<1>(log_hdr_ptr->timeStamp);
          char mbstr[100];
+         //TODO: address sanitize sometimes flags this line as an invalid
+         // memory access.  I believe it is because of a race condition
+         // between the operational and control applications.  We probably
+         // need a semaphore to fix ...
          std::strftime(mbstr, sizeof(mbstr), "%T", std::localtime(&time_stamp_sec));
          output << std::dec
             << mbstr

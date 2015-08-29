@@ -35,12 +35,12 @@ inline LogGenProxy& logCommon(LogLevel ll, int log_idx)
    return *reinterpret_cast<LogGenProxy*>(nullptr);
 }
 template <typename Tag>
-LogGenProxy& log(LogLevel ll)
+LogGenProxy log(LogLevel ll)
 {
    return logCommon<Tag>(ll, 0)
 }
 
-LogGenProxy& hexDump(LogLevel ll)
+LogGenProxy hexDump(LogLevel ll)
 {
    return logCommon<Tag>(ll, 1)
 }
@@ -72,9 +72,9 @@ namespace stat_log
    };
 
    template<typename Tag>
-   LogGenProxy& log(LogLevel ll = LogLevel::INFO);
+   LogGenProxy logger(LogLevel ll = LogLevel::INFO);
 
    template<typename Tag>
-   LogGenProxy& hexDump(LogLevel = LogLevel::INFO);
+   LogGenProxy hexDumper(LogLevel = LogLevel::INFO);
 
 }

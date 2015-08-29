@@ -42,7 +42,6 @@ struct LogStatOperational :
             "Require a parent_node for getLog!");
 
       auto cur_log_level = log_hdl.theProxy.getLevel(log_idx);
-      std::cout << "Current log level is " << (int)cur_log_level << std::endl;
       return LogGenProxy {
          *loggers[log_idx],
          log_level >= cur_log_level,
@@ -196,6 +195,23 @@ auto& getStatSingleton()
    static Stat theStat;
    return theStat;
 }
+
+
+template<typename Tag, typename Stat>
+struct TagBelongsToStat
+{
+   using TheStats = typename std::remove_const_t<typename Stat::TheStats>;
+   static_assert(boost::mpl::is_sequence<TheStats>::value,
+         "Stat::TheStats must be a sequence!");
+   using Iter = typename boost::fusion::result_of::find_if<
+         TheStats,
+         detail::matches_tag<Tag>
+      >::type;
+   static constexpr bool value = !std::is_same<
+         Iter,
+         typename boost::fusion::result_of::end<TheStats>::type
+      >::value;
+};
 
 }
 

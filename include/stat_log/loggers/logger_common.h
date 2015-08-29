@@ -134,14 +134,14 @@ namespace stat_log
          return *this;
       }
 
-      void hexDump(const char* buf, std::size_t len, const std::string& label)
+      void hexDump(const unsigned char* buf, std::size_t len, const std::string& label)
       {
          std::stringstream ss;
          ss << label << "\n";
          ss << std::setfill('0');
          for(std::size_t i = 0; i < len; ++i)
          {
-            ss << std::hex << std::setw(2) << (int)buf[i];
+            ss << std::hex << std::setw(2) << (unsigned int)buf[i];
             ss << (((i+1) % 32 == 0)? "\n" : " ");
          }
          theLogger.writeData(ss.str(), TagName, LogLevelName);

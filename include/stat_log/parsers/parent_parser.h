@@ -18,7 +18,7 @@ struct DoCmd<Stat, true>
    static void Go(Stat& stat, StatCmd cmd, boost::any& cmd_arg)
    {
       using Children = typename TagNode::child_list;
-      using Parent = typename TagNode::parent;
+      // using Parent = typename TagNode::parent;
       using Tag = typename TagNode::tag;
       if(printingRequired(cmd, true))
       {
@@ -70,14 +70,14 @@ processCommands(Stat& stat, const std::string& user_cmds)
    {
       cmd = StatCmd::PRINT_STAT_TYPE;
       detail::indent(TagNode::depth);
-      using Parent = typename TagNode::parent;
+      // using Parent = typename TagNode::parent;
       std::cout << TagNode::name << std::endl;
    }
    else if(vm["dump-stats"].as<bool>())
    {
       cmd = StatCmd::DUMP_STAT;
       detail::indent(TagNode::depth);
-      using Parent = typename TagNode::parent;
+      // using Parent = typename TagNode::parent;
       std::cout << TagNode::name << std::endl;
    }
    else if(vm["clear-stats"].as<bool>())

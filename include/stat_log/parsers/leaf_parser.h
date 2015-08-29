@@ -13,7 +13,7 @@ struct DoCmd<Stat, false>
    template <typename TagNode>
    static void Go(Stat& stat, StatCmd cmd, boost::any& cmd_arg)
    {
-      using Parent = typename TagNode::parent;
+      // using Parent = typename TagNode::parent;
       using Tag = typename TagNode::tag;
 
       if(printingRequired(cmd, false))

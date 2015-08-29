@@ -31,7 +31,7 @@ namespace stat_log
 
          unsigned char getLevel(int log_idx)
          {
-            assert(log_idx <= SharedType{}.size());
+            assert(log_idx <= (int)SharedType{}.size());
             return (*shared_ptr)[log_idx];
          }
 
@@ -61,7 +61,7 @@ namespace stat_log
             {
                auto logLevelCmd = boost::any_cast<LogLevelCommand>(cmd_arg);
                int log_idx = logLevelCmd.logger_idx;
-               assert(log_idx < SharedType{}.size());
+               assert(log_idx < (int)SharedType{}.size());
                auto& log_level_idx = (*shared_ptr)[log_idx];
                if(logLevelCmd.set_log_level)
                {
@@ -107,7 +107,6 @@ namespace stat_log
       public:
       virtual void getLog(boost::any& log_arg) = 0;
    };
-
 
 
    //Returned to user from the getXXLog() methods

@@ -58,7 +58,7 @@ namespace detail
          auto& val = *ptr;
          if(cmd == StatCmd::DUMP_STAT)
          {
-            if(val >= 0 && val < enumNames.size())
+            if(val >= 0 && static_cast<size_t>(val) < enumNames.size())
                std::cout << enumNames[val];
             else
                std::cout << std::dec << (unsigned long int)val;

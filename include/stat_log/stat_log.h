@@ -21,7 +21,7 @@ namespace detail
    {
       auto statHdlView = getStatHandleView<StatTag>(theStats);
       static_assert(boost::fusion::result_of::size<decltype(statHdlView)>::value == 1,
-            "Too many matching tags in getStatHandle!");
+            "Require a SINGLE matching tag in getStatHandle!");
       auto& stat_hdl = boost::fusion::deref(boost::fusion::begin(statHdlView));
       return stat_hdl;
    }
@@ -170,7 +170,7 @@ struct LogStatControl :
 
    void outputLog(int logger_idx, boost::any& log_args)//int logger_idx, const std::string& output_filename)
    {
-      assert(logger_idx <= loggers.size());
+      assert(logger_idx <= (int)loggers.size());
       loggers[logger_idx]->getLog(log_args);
       std::exit(0);
    }

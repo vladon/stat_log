@@ -67,7 +67,6 @@ namespace stat_log
       //The actual statistic write :)
       static void write_idx(void* shared_ptr, int idx, ShmType value)
       {
-         auto& theArray = *reinterpret_cast<SharedType*>(shared_ptr);
          auto ptr = reinterpret_cast<ShmType*>(shared_ptr) + idx;
          stat_array_detail::traits<Repr>::write(ptr, value);
       }
@@ -100,7 +99,7 @@ namespace stat_log
             std::cout << "STAT_ARRAY: " << std::endl;
             std::cout << std::dec << "[";
          }
-         for(auto i = 0; i < Size; ++i)
+         for(size_t i = 0; i < Size; ++i)
          {
             stat_array_detail::traits<Repr>::doStatCommand((void*)&theArray[i], cmd, arg,
                   enumNames, dimensionNames, dimension_idx+1);
@@ -150,7 +149,7 @@ namespace stat_log
             }
             std::cout << std::dec << "[";
          }
-         for(auto i = 0; i < Size; ++i)
+         for(size_t i = 0; i < Size; ++i)
          {
             auto child_ptr = reinterpret_cast<void*>(&theArray[i]);
             StatArray<N,Repr>::doStatCommand(child_ptr, cmd, arg,

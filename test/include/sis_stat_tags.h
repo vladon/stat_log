@@ -20,10 +20,10 @@ struct SIS
       )
    };
 
-   using ChildTypes = boost::fusion::vector<
-      MAC_PKTS_DOWN_TAG,
-      MAC_PKTS_UP_TAG,
-      PER_NBR_STATS
-   >;
+   using ChildTypes = MAKE_STAT_LIST(
+      (MAC_PKTS_DOWN_TAG)
+      (MAC_PKTS_UP_TAG)
+      (PER_NBR_STATS)
+    );
 };
 

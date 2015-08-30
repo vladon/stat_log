@@ -10,7 +10,7 @@ struct HW_INTERFACE
       HwIntfBase,
       (MISC_FPGA_FAULT)
       (BUFFER_OVERFLOW)
-   )
+   );
 };
 
 

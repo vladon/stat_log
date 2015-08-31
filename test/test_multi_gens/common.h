@@ -6,6 +6,7 @@
 #include "stat_log/backends/shared_mem_backend.h"
 #include "stat_log/stats/stats_common.h"
 #include "stat_log/stats/simple_counter.h"
+#include "stat_log/stats/accumulator.h"
 
 #include <iostream>
 #include <vector>
@@ -53,6 +54,12 @@ namespace stat_log
       using type = SimpleCounter<int>;
    };
 
+   template <>
+   struct stat_tag_to_type<HW_INTERFACE::MISC_FPGA_FAULT_TAG>
+   {
+      // using type = SimpleCounter<int>;
+      using type = Accumulator<int, int, int>;
+   };
 }
 
 

@@ -35,6 +35,17 @@ struct num_stat_dimensions
 
 namespace detail
 {
+   //Some StatTypes may have different implementations based on whether we are
+   //in "operational" mode or not.  I provide this trait to allow the specific
+   //stat types to switch their implementations accordingly.
+   //NOTE: the default trait specifies that the implementation is the same as
+   //the StatType itself.
+   template <typename StatType, bool IsOperational>
+   struct stat_type_to_impl
+   {
+      using type = StatType;
+   };
+
    template <typename Repr, typename WritePolicy>
    struct SimpleStat
    {
@@ -74,16 +85,19 @@ namespace detail
       }
    };
 
-   template <typename StatType>
-   struct StatProxyBase : StatType
+   template <typename StatType, bool IsOperational>
+   struct StatProxyBase : stat_type_to_impl<StatType, IsOperational>::type
    {
-      using SharedType = typename StatType::SharedType;
+      using BaseClass =
+         typename stat_type_to_impl<StatType, IsOperational>::type;
+      using SharedType = typename BaseClass::SharedType;
       SharedType* shared_ptr = nullptr;
       void setSharedPtr(void* ptr)
       {
          shared_ptr = reinterpret_cast<SharedType*>(ptr);
       }
-      StatType statHandler;
+      // StatType statHandler;
+      BaseClass statHandler;
 
       static constexpr size_t getSharedSize()
       {
@@ -120,7 +134,7 @@ void doSerializeStat(StatType& stat, void* ptr)
 }
 
 template <typename StatType>
-struct OperationalStatProxy : detail::StatProxyBase<StatType>
+struct OperationalStatProxy : detail::StatProxyBase<StatType, true>
 {
    template <typename... Args>
    void write(Args... args)
@@ -136,7 +150,7 @@ struct OperationalStatProxy : detail::StatProxyBase<StatType>
 
 
 template <typename StatType>
-struct ControlStatProxy : detail::StatProxyBase<StatType>
+struct ControlStatProxy : detail::StatProxyBase<StatType, false>
 {
    void doCommand(StatCmd cmd, boost::any& cmd_arg)
    {

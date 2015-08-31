@@ -16,8 +16,6 @@
 #include <cstdlib>
 #include <assert.h>
 
-#define TERM_NUM_COLUMNS 100
-
 namespace stat_log
 {
 enum class StatCmd

@@ -168,22 +168,19 @@ void parse(Stat& stat, std::string& component_name, std::string& user_cmds)
    }
 
    auto child_component_name = component_name;
-   if(TagNode::depth > 0)
+   auto component_head_tail = getHeadTail(component_name,'-');
+   auto& head_c = std::get<0>(component_head_tail);
+   auto& tail_c = std::get<1>(component_head_tail);
+   if(head_c != TagNode::name)
    {
-      auto component_head_tail = getHeadTail(component_name,'-');
-      auto& head_c = std::get<0>(component_head_tail);
-      auto& tail_c = std::get<1>(component_head_tail);
-      if(head_c != TagNode::name)
-      {
-         return;
-      }
-      if(tail_c.empty())
-      {
-         processCommands<TagNode>(stat, user_cmds);
-         return;
-      }
-      child_component_name = tail_c;
+      return;
    }
+   if(tail_c.empty())
+   {
+      processCommands<TagNode>(stat, user_cmds);
+      return;
+   }
+   child_component_name = tail_c;
    using Children = typename TagNode::child_list;
    boost::fusion::for_each(Children{},
       [&](auto ctag_node)

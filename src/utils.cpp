@@ -9,6 +9,8 @@
 #include <algorithm>
 #include <vector>
 
+#define TERM_NUM_COLUMNS 100
+
 namespace stat_log
 {
 namespace detail

@@ -30,7 +30,7 @@ struct is_serialization_deferred
 template <typename Repr>
 struct num_stat_dimensions
 {
-      static constexpr int value = 1;
+   static constexpr int value = 1;
 };
 
 namespace detail

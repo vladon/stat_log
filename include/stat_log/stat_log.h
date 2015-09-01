@@ -77,7 +77,7 @@ struct LogStatOperational :
    template <typename StatTag, typename... Args>
    void writeStat(Args... args)
    {
-      detail::getStatHandle<StatTag>(this->theStats).theProxy.write(args...);
+      detail::getStatHandle<StatTag>(this->theStats).theProxy.writeVal(args...);
    }
 
    //This method will be called by the base class once it is done with

@@ -88,16 +88,14 @@ namespace detail
    template <typename StatType, bool IsOperational>
    struct StatProxyBase : stat_type_to_impl<StatType, IsOperational>::type
    {
-      using BaseClass =
+      using StatImpl =
          typename stat_type_to_impl<StatType, IsOperational>::type;
-      using SharedType = typename BaseClass::SharedType;
+      using SharedType = typename StatImpl::SharedType;
       SharedType* shared_ptr = nullptr;
       void setSharedPtr(void* ptr)
       {
          shared_ptr = reinterpret_cast<SharedType*>(ptr);
       }
-      // StatType statHandler;
-      BaseClass statHandler;
 
       static constexpr size_t getSharedSize()
       {
@@ -137,14 +135,15 @@ template <typename StatType>
 struct OperationalStatProxy : detail::StatProxyBase<StatType, true>
 {
    template <typename... Args>
-   void write(Args... args)
+   void writeVal(Args... args)
    {
-      this->statHandler.write(this->shared_ptr, args...);
+      this->write(this->shared_ptr, args...);
    }
 
    void serialize()
    {
-      doSerializeStat(this->statHandler, this->shared_ptr);
+      using StatImpl = typename detail::StatProxyBase<StatType, true>::StatImpl;
+      doSerializeStat(static_cast<StatImpl&>(*this), this->shared_ptr);
    }
 };
 
@@ -167,7 +166,6 @@ struct ControlStatProxy : detail::StatProxyBase<StatType, false>
    //The per-dimension labels.
    // std::array<std::string, num_stat_dimensions<StatType>::value> dimensionNames;
    std::vector<std::string> dimensionNames;
-
 };
 
 }

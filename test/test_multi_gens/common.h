@@ -26,6 +26,7 @@ struct TOP_MAC_SIS
    >;
 };
 
+constexpr bool IsOperational = true;
 
 using OpStatMacSis = stat_log::LogStatOperational<TOP_MAC_SIS>;
 using ControlStatMacSis = stat_log::LogStatControl<TOP_MAC_SIS>;

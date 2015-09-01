@@ -39,7 +39,6 @@ namespace detail
    {
       using tag_node = TagNode;
       using tag = typename tag_node::tag;
-      // using matching_tags = MatchingTags;
       void setSharedPtr(void* ptr)
       {
          theProxy.setSharedPtr(ptr);
@@ -59,7 +58,6 @@ namespace detail
    {
       using tag_node = TagNode;
       using tag = typename tag_node::tag;
-      // using matching_tags = MatchingTags;
       void setSharedPtr(void* ptr)
       {
          theProxy.setSharedPtr(ptr);
@@ -73,17 +71,16 @@ namespace detail
 
    //++++ STATISTIC CONTAINERS ++++++++++
    template <typename TagNode>
-      struct GenericOpStat
+   struct GenericOpStat
    {
       using tag_node = TagNode;
       using tag = typename tag_node::tag;
-      // using matching_tags = MatchingTags;
       static constexpr bool IsParent = false;
 
       template <typename... Args>
       void writeVal(Args... args)
       {
-         theProxy.write(args...);
+         theProxy.writeVal(args...);
       }
 
       void setSharedPtr(void* ptr)
@@ -101,11 +98,10 @@ namespace detail
 
 
    template <typename TagNode>
-      struct GenericControlStat
+   struct GenericControlStat
    {
       using tag_node = TagNode;
       using tag = typename tag_node::tag;
-      // using matching_tags = MatchingTags;
       static constexpr bool IsParent = false;
 
       void setSharedPtr(void* ptr)
@@ -114,7 +110,6 @@ namespace detail
       }
       using Proxy = ControlStatProxy<typename stat_tag_to_type<tag>::type>;
       Proxy theProxy;
-
    };
    //+++++++++++++++++++++++++++++++++
 

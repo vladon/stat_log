@@ -1,7 +1,7 @@
 #pragma once
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/mapped_region.hpp>
-#include "stat_log/loggers/logger_common.h"
+#include <stat_log/loggers/logger_common.h>
 #include <iostream>
 #include <ctime>
 #include <iomanip>

@@ -1,9 +1,9 @@
 #pragma once
 //TODO: generalize backend types
-#include "stat_log/defs.h"
-#include "stat_log/backends/shared_mem_backend.h"
-#include "stat_log/loggers/logger_common.h"
-#include "stat_log/stats/stats_common.h"
+#include <stat_log/defs.h>
+#include <stat_log/backends/shared_mem_backend.h>
+#include <stat_log/loggers/logger_common.h>
+#include <stat_log/stats/stats_common.h>
 
 #include <boost/fusion/view.hpp>
 #include <boost/fusion/algorithm.hpp>

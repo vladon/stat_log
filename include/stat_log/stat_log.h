@@ -1,7 +1,7 @@
 #pragma once
-#include "stat_log/util/stat_log_impl.h"
-#include "stat_log/parsers/parent_parser.h"
-#include "stat_log/stats/stats_common.h"
+#include <stat_log/util/stat_log_impl.h>
+#include <stat_log/parsers/parent_parser.h>
+#include <stat_log/stats/stats_common.h>
 
 #include <boost/algorithm/string/join.hpp>
 #include <boost/any.hpp>

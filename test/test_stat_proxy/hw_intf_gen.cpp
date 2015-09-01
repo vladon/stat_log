@@ -1,5 +1,5 @@
 #include "hw_intf_stat_tags.h"
-#include "stat_log/util/compile_proxy.h"
+#include <stat_log/util/compile_proxy.h>
 
 void genStats_HW_INTF()
 {

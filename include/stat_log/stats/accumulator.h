@@ -1,7 +1,7 @@
 #pragma once
 #include <iostream>
-#include "stat_log/parsers/parser_common.h"
-#include "stat_log/stats/stats_common.h"
+#include <stat_log/parsers/parser_common.h>
+#include <stat_log/stats/stats_common.h>
 
 namespace stat_log
 {

@@ -1,6 +1,6 @@
 #pragma once
-#include "stat_log/stats/stats_common.h"
-#include "stat_log/parsers/parser_common.h"
+#include <stat_log/stats/stats_common.h>
+#include <stat_log/parsers/parser_common.h>
 #include <iomanip>
 #include <chrono>
 #include <array>

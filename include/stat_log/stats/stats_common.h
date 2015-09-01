@@ -1,5 +1,5 @@
 #pragma once
-#include "stat_log/parsers/parser_common.h"
+#include <stat_log/parsers/parser_common.h>
 #include <boost/any.hpp>
 #include <type_traits>
 #include <vector>

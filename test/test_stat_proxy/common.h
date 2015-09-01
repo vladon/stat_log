@@ -2,14 +2,14 @@
 #include "sis_stat_tags.h"
 #include "hw_intf_stat_tags.h"
 
-#include "stat_log/stat_log.h"
-#include "stat_log/backends/shared_mem_backend.h"
-#include "stat_log/loggers/shared_memory_logger.h"
-#include "stat_log/stats/stats_common.h"
-#include "stat_log/stats/simple_counter.h"
-#include "stat_log/stats/simple_status.h"
-#include "stat_log/stats/stat_array.h"
-#include "stat_log/util/compile_proxy.h"
+#include <stat_log/stat_log.h>
+#include <stat_log/backends/shared_mem_backend.h>
+#include <stat_log/loggers/shared_memory_logger.h>
+#include <stat_log/stats/stats_common.h>
+#include <stat_log/stats/simple_counter.h>
+#include <stat_log/stats/simple_status.h>
+#include <stat_log/stats/stat_array.h>
+#include <stat_log/util/compile_proxy.h>
 
 #include <iostream>
 #include <vector>

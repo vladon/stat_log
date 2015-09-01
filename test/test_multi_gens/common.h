@@ -2,11 +2,11 @@
 #include "sis_stat_tags.h"
 #include "hw_intf.h"
 
-#include "stat_log/stat_log.h"
-#include "stat_log/backends/shared_mem_backend.h"
-#include "stat_log/stats/stats_common.h"
-#include "stat_log/stats/simple_counter.h"
-#include "stat_log/stats/accumulator.h"
+#include <stat_log/stat_log.h>
+#include <stat_log/backends/shared_mem_backend.h>
+#include <stat_log/stats/stats_common.h>
+#include <stat_log/stats/simple_counter.h>
+#include <stat_log/stats/accumulator.h>
 
 #include <iostream>
 #include <vector>

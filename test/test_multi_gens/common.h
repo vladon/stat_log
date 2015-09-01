@@ -8,6 +8,9 @@
 #include <stat_log/stats/simple_counter.h>
 #include <stat_log/stats/accumulator.h>
 
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics.hpp>
+
 #include <iostream>
 #include <vector>
 #include <string>
@@ -37,6 +40,7 @@ using ControlStatMacSis = stat_log::LogStatControl<TOP_MAC_SIS>;
 namespace stat_log
 {
 
+   namespace ba = boost::accumulators;
    template <typename Tag>
    struct stat_tag_to_type<Tag, typename std::enable_if<
       std::is_base_of<MacBase, Tag>::value
@@ -55,11 +59,12 @@ namespace stat_log
       using type = SimpleCounter<int>;
    };
 
+   using MinAccum = ba::accumulator_set<double, ba::tag::min>;
+
    template <>
    struct stat_tag_to_type<HW_INTERFACE::MISC_FPGA_FAULT_TAG>
    {
-      // using type = SimpleCounter<int>;
-      using type = Accumulator<int, int, int>;
+      using type = Accumulator<MinAccum>;
    };
 }
 

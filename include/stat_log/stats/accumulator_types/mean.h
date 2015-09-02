@@ -1,5 +1,6 @@
 #pragma once
 #include <boost/accumulators/statistics/mean.hpp>
+#include <iostream>
 
 namespace stat_log
 {

@@ -1,5 +1,6 @@
 #pragma once
 #include <boost/accumulators/statistics/min.hpp>
+#include <iostream>
 
 namespace stat_log
 {

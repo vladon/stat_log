@@ -10,7 +10,7 @@ void initializeStatistics<false == IsOperational>()
    hwIntfStat.addLogger(logger);
 
    auto& macSisStat = stat_log::getStatSingleton<ControlStatMacSis>();
-   macSisStat.init(STAT_LOG_HW_INTF_SHM_NAME);
+   macSisStat.init(STAT_LOG_MAC_SIS_SHM_NAME);
    macSisStat.addLogger(logger);
 }
 
@@ -25,6 +25,6 @@ void initializeStatistics<true == IsOperational>()
    hwIntfStat.addLogger(logger);
 
    auto& macSisStat = stat_log::getStatSingleton<OpStatMacSis>();
-   macSisStat.init(STAT_LOG_HW_INTF_SHM_NAME);
+   macSisStat.init(STAT_LOG_MAC_SIS_SHM_NAME);
    macSisStat.addLogger(logger);
 }

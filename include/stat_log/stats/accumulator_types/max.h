@@ -1,5 +1,6 @@
 #pragma once
 #include <boost/accumulators/statistics/max.hpp>
+#include <iostream>
 
 namespace stat_log
 {

@@ -7,6 +7,9 @@
 #include <boost/fusion/include/as_list.hpp>
 
 #include <iostream>
+#include <cstring>
+#include <iomanip>
+#include <ios>
 
 namespace stat_log
 {
@@ -83,15 +86,21 @@ namespace detail
       using feature_handlers =
          typename boost::fusion::result_of::as_list<feature_handlers_t>::type;
 
-      //TODO Add the control word here as well
-      // using Ser
+      //control word is a flag shared between the control and operational
+      // modes.  Its current purpose is to simply flag that the accumulator
+      // should be reset.
+      using control_word = int;
 
+      //Define -- using MPL magic -- an array with a size equal to the
+      // sum of the feature handlers' shared_types _plus_ the size of
+      // the control word.
       using SharedType = std::array<char,
                               boost::mpl::accumulate<
                                    feature_handlers_t
                                    , boost::mpl::int_<0>
                                    , plus_wrapper
                                 >::type::value
+                                + sizeof(control_word)
                          >;
    };
 
@@ -102,31 +111,40 @@ namespace detail
       using sample_type = typename AccumSet::sample_type;
       using SharedType = typename BaseClass::SharedType;
       using feature_handlers = typename BaseClass::feature_handlers;
+      using control_word = typename BaseClass::control_word;
 
       //Called via the deferred processing thread
       void serialize(void* ptr)
       {
-         std::cout << "SERIALIZE!\n";
-         std::cout << "sizeof shared_type = " << sizeof(SharedType) << std::endl;
          //Visit each of the features' serialize method.
          using namespace boost::fusion;
          auto shm_ptr = reinterpret_cast<char*>(ptr);
          for_each(feature_handlers{}, [&](auto& feature_handler)
          {
             using FeatureHandlerType = std::remove_reference_t<decltype(feature_handler)>;
+            //TODO: this may be a race condition
+            // we probably need to to a semaphore "try-lock" in the write()
+            // routine and to a semaphore "down" in the serialize() method.
             FeatureHandlerType::serialize(acc, shm_ptr);
             shm_ptr += FeatureHandlerType::size();
          });
       }
 
-      void write(void* /*shared_ptr*/, sample_type sample)
+      void write(void* shared_ptr, sample_type sample)
       {
-         //TODO: check the "control" portion of the shared memory
-         // to see if we should reset the accumulator
-#if 0
-         if(should_zero_accumulator)
-            acc = feature_handlers{};
-#endif
+         auto ptr = reinterpret_cast<char*>(shared_ptr);
+         ptr += sizeof(SharedType) - sizeof(control_word);
+         auto control_word_ptr = reinterpret_cast<control_word*>(ptr);
+
+         //Check the control word to see if we need to reset the
+         // accumulator.
+         if(*control_word_ptr)
+         {
+            //TODO: this may be a race condition
+            acc = AccumSet{};
+            *control_word_ptr = 0;
+         }
+         //Add this sample to the accumulator
          acc(sample);
       }
 
@@ -140,6 +158,7 @@ namespace detail
       using BaseClass = AccumBase<AccumSet>;
       using SharedType = typename BaseClass::SharedType;
       using feature_handlers = typename BaseClass::feature_handlers;
+      using control_word = typename BaseClass::control_word;
 
       static void doStatCommand(
             void* shared_ptr,
@@ -151,34 +170,59 @@ namespace detail
       {
          using namespace boost::fusion;
 
-         // auto ptr = reinterpret_cast<char*>(shared_ptr);
+         auto ptr = reinterpret_cast<char*>(shared_ptr);
          //TODO: handle all commands
          if(cmd == StatCmd::DUMP_STAT)
          {
-            std::cout << "Accumulator:";
-            for_each(feature_handlers{}, [&](auto& feature_handler)
+            size_t max_width = 0;
+            size_t num_fields = 0;
+            for_each(feature_handlers{}, [&](auto feature_handler)
             {
-#if 0 //TODO
-            using FeatureHandlerType = std::remove_reference_t<decltype(feature_handler)>;
-            std::cout << " " << FeatureHandlerType::stat_name
-            <<
-#endif
-
+               using FeatureHandlerType = decltype(feature_handler);
+               auto len = std::strlen(FeatureHandlerType::stat_name);
+               num_fields += 1;
+               max_width = std::max(max_width, len);
             });
+
+            size_t max_pad = max_width + 2;
+            size_t total_width = num_fields * max_pad;
+
+            std::cout << '\n';
+            const auto orig_flags = std::cout.flags();
+            std::cout.flags(std::ios::left);
+            for_each(feature_handlers{}, [&](auto feature_handler)
+            {
+               using FeatureHandlerType = decltype(feature_handler);
+               std::cout << std::setw(max_pad) << FeatureHandlerType::stat_name;
+            });
+            std::cout << std::setfill('-') << std::setw(total_width) << '\n' << std::endl;
+            std::cout << std::setfill(' ') ;
+            for_each(feature_handlers{}, [&](auto feature_handler)
+            {
+               using FeatureHandlerType = decltype(feature_handler);
+               std::cout.width(max_pad);
+               std::cout.precision(max_width);
+               FeatureHandlerType::dumpStat(ptr);
+               ptr += FeatureHandlerType::size();
+            });
+            std::cout.flags(orig_flags);
+            std::cout << std::endl;
          }
          else if(cmd == StatCmd::PRINT_STAT_TYPE)
          {
             std::cout << "Accumulator:";
-            for_each(feature_handlers{}, [&](auto& feature_handler)
+            for_each(feature_handlers{}, [&](auto feature_handler)
             {
-                  using FeatureHandlerType = std::remove_reference_t<decltype(feature_handler)>;
+                  using FeatureHandlerType = decltype(feature_handler);
                   std::cout << " " << FeatureHandlerType::stat_name;
             });
+            std::cout << std::endl;
          }
          else if(cmd == StatCmd::CLEAR_STAT)
          {
-            //TODO: set the "control" portion of shared memory indicating that
-            // the accumulator should be cleared
+            ptr += sizeof(SharedType) - sizeof(control_word);
+            auto control_word_ptr = reinterpret_cast<control_word*>(ptr);
+            *control_word_ptr = 1;
          }
       }
    };

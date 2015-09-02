@@ -11,6 +11,7 @@
 #include <stat_log/stats/accumulator_types/min.h>
 #include <stat_log/stats/accumulator_types/max.h>
 #include <stat_log/stats/accumulator_types/mean.h>
+#include <stat_log/stats/accumulator_types/histogram.h>
 
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
@@ -63,15 +64,25 @@ namespace stat_log
       using type = SimpleCounter<int>;
    };
 
-   using TheAccum = ba::accumulator_set<
-         double
-         , ba::stats<
-               ba::tag::count
-             , ba::tag::min
-             , ba::tag::max
-             , ba::tag::mean
-             >
+#if 1
+   using TheAccum = stat_log::HistogramCount<
+      double,
+      0,
+      10,
+      10
       >;
+#else
+   using TheAccum = ba::accumulator_set<
+      double
+      , ba::stats<
+      ba::tag::count
+      , ba::tag::min
+      , ba::tag::max
+      , ba::tag::mean
+      >
+      >;
+#endif
+
 
    template <>
    struct stat_tag_to_type<HW_INTERFACE::MISC_FPGA_FAULT_TAG>

@@ -25,6 +25,8 @@ int main(int argc, char** argv)
       hwIntfStat.getAlertLog<HW_INTERFACE>() << "HELLO from HW (loop)";
       hwIntfStat.writeStat<HW_INTERFACE::MISC_FPGA_FAULT_TAG>(val);
       val = val + 1.0;
+      if(val > 7.0)
+         val = 0.0;
    }
    macSisStat.stop();
    hwIntfStat.stop();

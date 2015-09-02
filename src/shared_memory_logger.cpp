@@ -2,11 +2,14 @@
 #include <boost/interprocess/sync/scoped_lock.hpp>
 #include <cstring>
 #include <fstream>
+#include <tuple>
 
 using namespace stat_log;
 using std::size_t;
 using std::chrono::microseconds;
 using std::time_t;
+
+#define CEIL_DIVIDE(a, b) ( ((a) + (b) - 1)/(b) )
 
 namespace
 {
@@ -14,7 +17,17 @@ namespace
    constexpr size_t lock_size = sizeof(boost::interprocess::interprocess_mutex);
 
    using LogBufEntry = std::array<char, bytes_per_log_buf>;
-   using TimeStampTuple = std::tuple<time_t, microseconds>;
+   struct TimeStamp
+   {
+      time_t sec;
+      microseconds usec;
+   };
+
+   bool operator>(const TimeStamp& rhs, const TimeStamp& lhs)
+   {
+      return std::make_tuple(rhs.sec, rhs.usec) > std::make_tuple(lhs.sec, lhs.usec);
+   }
+
 
    struct LogHeaderCommon
    {
@@ -27,16 +40,18 @@ namespace
    struct LogHeader
    {
       LogHeaderCommon commonHeader;
-      TimeStampTuple timeStamp;
+      TimeStamp timeStamp;
       std::array<char, 16> tagName;
       std::array<char, 8> logLevelName;
    };
+   constexpr size_t max_chars_in_first_block = bytes_per_log_buf - sizeof(LogHeader);
+   constexpr size_t max_chars_in_other_blocks = bytes_per_log_buf - sizeof(LogHeaderCommon);
 }
 
 shared_mem_logger_generator::shared_mem_logger_generator(
       const std::string& shm_name, size_t shm_size)
    : currentLogEntry(0),
-     numLogEntries(shm_size/bytes_per_log_buf)
+     numLogEntries((shm_size - lock_size)/bytes_per_log_buf)
 {
    using namespace boost::interprocess;
    shared_memory_object shm_obj
@@ -84,8 +99,13 @@ shared_mem_logger_generator::doWriteData(const char* buf, size_t len,
       return;
    }
 
-   const size_t num_log_bufs
-      = (len + bytes_per_log_buf - 1)/bytes_per_log_buf;
+   const size_t num_log_bufs = 1 +
+      (
+         (len > max_chars_in_first_block)
+         ? CEIL_DIVIDE(len-max_chars_in_first_block,
+               max_chars_in_other_blocks)
+         : 0
+      );
    size_t start_log_idx;
    {
       std::unique_lock<std::mutex> lock(mtx);
@@ -99,20 +119,20 @@ shared_mem_logger_generator::doWriteData(const char* buf, size_t len,
    auto log_hdr_ptr = reinterpret_cast<LogHeader*>(log_entry_ptr);
 
    log_hdr_ptr->commonHeader.numBlocks = num_log_bufs;
-   std::get<0>(log_hdr_ptr->timeStamp) = time_stamp;
-   std::get<1>(log_hdr_ptr->timeStamp) = time_stamp_us;
+   log_hdr_ptr->timeStamp.sec = time_stamp;
+   log_hdr_ptr->timeStamp.usec = time_stamp_us;
    std::strncpy(log_hdr_ptr->tagName.data(), TagName, log_hdr_ptr->tagName.size());
    std::strncpy(log_hdr_ptr->logLevelName.data(), LogLevelName,
          log_hdr_ptr->logLevelName.size());
 
    auto data_ptr = reinterpret_cast<char*>(log_hdr_ptr+1);
-   auto bytes_to_write = std::min(len, bytes_per_log_buf-sizeof(LogHeader));
+   auto bytes_to_write = std::min(len, max_chars_in_first_block);
    while(bytes_to_write > 0)
    {
-      std::strncpy(data_ptr, buf, bytes_to_write);
+      std::copy(buf, buf + bytes_to_write, data_ptr);
       len -= bytes_to_write;
       buf += bytes_to_write;
-      bytes_to_write = std::min(len, bytes_per_log_buf-sizeof(LogHeaderCommon));
+      bytes_to_write = std::min(len, max_chars_in_other_blocks);
       if(bytes_to_write > 0)
       {
          cur_log_idx = (cur_log_idx + 1) % numLogEntries;
@@ -168,20 +188,20 @@ shared_mem_logger_retriever::getLog(boost::any& log_args)
    //
    //4. The boolean "show_tag", "show_time_stamp" and "show_log_level" will
    //   be used to specify the level of verbosity when outputting the log entries.
-   std::vector<char> temp_log_buf(region.get_size());
+   std::vector<char> temp_log_buf(region.get_size() - lock_size);
    {
 
       //Get the shared lock while we copy the log memory.
       scoped_lock<interprocess_mutex> lock(*mutex_ptr);
       //1:
-      std::copy(shm_ptr, shm_ptr + region.get_size(), temp_log_buf.data());
+      std::copy(shm_ptr, shm_ptr + region.get_size() - lock_size, temp_log_buf.data());
    }
 
    //2.
    bool found_valid_entry = false;
-   auto log_entry_ptr = reinterpret_cast<const LogBufEntry*>(shm_ptr);
+   auto log_entry_ptr = reinterpret_cast<const LogBufEntry*>(temp_log_buf.data());
    size_t first_log_entry = 0;
-   TimeStampTuple firstTimeStamp;
+   TimeStamp firstTimeStamp;
 
 
    for(size_t i = 0; i < numLogEntries; ++i, ++log_entry_ptr)
@@ -211,25 +231,26 @@ shared_mem_logger_retriever::getLog(boost::any& log_args)
    while(num_log_entries_processed < numLogEntries)
    {
 
-      log_entry_ptr = reinterpret_cast<const LogBufEntry*>(shm_ptr) + cur_log_entry;
+      log_entry_ptr = reinterpret_cast<const LogBufEntry*>(temp_log_buf.data()) + cur_log_entry;
       auto log_hdr_ptr = reinterpret_cast<const LogHeader*>(log_entry_ptr);
 
       cur_log_entry = (cur_log_entry + 1) % numLogEntries;
       ++num_log_entries_processed;
       if(log_hdr_ptr->commonHeader.numBlocks == 0)
          continue;
-
       //4
       if(show_time_stamp)
       {
-         auto& time_stamp_sec = std::get<0>(log_hdr_ptr->timeStamp);
-         auto& time_stamp_us = std::get<1>(log_hdr_ptr->timeStamp);
+         const auto& time_stamp_sec = log_hdr_ptr->timeStamp.sec;
+         const auto& time_stamp_us = log_hdr_ptr->timeStamp.usec;
          char mbstr[100];
-         //TODO: address sanitize sometimes flags this line as an invalid
-         // memory access.  I believe it is because of a race condition
-         // between the operational and control applications.  We probably
-         // need a semaphore to fix ...
-         std::strftime(mbstr, sizeof(mbstr), "%T", std::localtime(&time_stamp_sec));
+         auto loc_time_ptr = std::localtime(&time_stamp_sec);
+         if(loc_time_ptr == nullptr)
+         {
+            std::cerr << "Invalid time stamp!\n";
+            std::exit(1);
+         }
+         std::strftime(mbstr, sizeof(mbstr), "%T", loc_time_ptr);
          output << std::dec
             << mbstr
             //std::put_time does not exist in GCC :(
@@ -245,15 +266,17 @@ shared_mem_logger_retriever::getLog(boost::any& log_args)
       {
          output << log_hdr_ptr->logLevelName.data() << ": ";
       }
+
       auto data_ptr = reinterpret_cast<const char*>(log_hdr_ptr+1);
       output << data_ptr;
       for(unsigned int i = 0; i < log_hdr_ptr->commonHeader.numBlocks - 1; ++i)
       {
-         log_entry_ptr += 1;
+         log_entry_ptr = reinterpret_cast<const LogBufEntry*>(temp_log_buf.data()) + cur_log_entry;
          auto log_sub_hdr_ptr = reinterpret_cast<const LogHeaderCommon*>(log_entry_ptr);
          data_ptr = reinterpret_cast<const char*>(log_sub_hdr_ptr + 1);
          output << data_ptr;
          ++num_log_entries_processed;
+         cur_log_entry = (cur_log_entry + 1) % numLogEntries;
       }
       output << std::endl;
    }

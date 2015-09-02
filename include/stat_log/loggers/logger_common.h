@@ -139,6 +139,8 @@ namespace stat_log
 
       void hexDump(const unsigned char* buf, std::size_t len, const std::string& label)
       {
+         if(false == enabled)
+            return;
          std::stringstream ss;
          ss << label << "\n";
          ss << std::setfill('0');

@@ -14,7 +14,6 @@
 
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
-// #include <boost/accumulators/statistics/min.hpp>
 
 #include <iostream>
 #include <vector>

@@ -1,4 +1,5 @@
 #include <stat_log/loggers/shared_memory_logger.h>
+#include <boost/interprocess/sync/scoped_lock.hpp>
 #include <cstring>
 #include <fstream>
 
@@ -10,6 +11,7 @@ using std::time_t;
 namespace
 {
    constexpr size_t bytes_per_log_buf = 512;
+   constexpr size_t lock_size = sizeof(boost::interprocess::interprocess_mutex);
 
    using LogBufEntry = std::array<char, bytes_per_log_buf>;
    using TimeStampTuple = std::tuple<time_t, microseconds>;
@@ -44,8 +46,9 @@ shared_mem_logger_generator::shared_mem_logger_generator(
       );
    shm_obj.truncate(shm_size);
    region = mapped_region{shm_obj, read_write};
-   shm_ptr = reinterpret_cast<char*>(region.get_address());
-   std::memset(shm_ptr, 0, shm_size);
+   mutex_ptr = new (region.get_address()) interprocess_mutex;
+   shm_ptr = reinterpret_cast<char*>(region.get_address()) + lock_size;
+   std::memset(shm_ptr, 0, shm_size - lock_size);
 }
 
 void
@@ -71,6 +74,15 @@ shared_mem_logger_generator::doWriteData(const char* buf, size_t len,
    // considered metadata.  The logger-retriever can then
    // use this metadata -- e.g. to filter out unwanted entries
    // or to not print the time stamp along, etc.
+   using namespace boost::interprocess;
+   scoped_lock<interprocess_mutex> lock(*mutex_ptr, try_to_lock);
+   if(!lock)
+   {
+      //The control process must be in the process of reading
+      // the log memory.  To avoid hanging the calling
+      // process just return (and not log the entry).
+      return;
+   }
 
    const size_t num_log_bufs
       = (len + bytes_per_log_buf - 1)/bytes_per_log_buf;
@@ -115,21 +127,23 @@ shared_mem_logger_generator::doWriteData(const char* buf, size_t len,
 shared_mem_logger_retriever::shared_mem_logger_retriever(
       const std::string& shm_name, size_t shm_size)
    :
-     numLogEntries(shm_size/bytes_per_log_buf)
+     numLogEntries((shm_size - lock_size)/bytes_per_log_buf)
 {
    using namespace boost::interprocess;
    shared_memory_object shm_obj
       ( open_only
        ,shm_name.c_str()
-       ,read_only
+       ,read_write
       );
-   region = mapped_region{shm_obj, read_only};
-   shm_ptr = reinterpret_cast<const char*>(region.get_address());
+   region = mapped_region{shm_obj, read_write};
+   mutex_ptr = reinterpret_cast<interprocess_mutex*>(region.get_address());
+   shm_ptr = reinterpret_cast<const char*>(region.get_address()) + lock_size;
 }
 
 void
 shared_mem_logger_retriever::getLog(boost::any& log_args)
 {
+   using namespace boost::interprocess;
    auto log_params = boost::any_cast<LogOutputCommand>(log_args);
    std::ostream* output_ptr = &std::cout;
    std::fstream output_file;
@@ -143,10 +157,8 @@ shared_mem_logger_retriever::getLog(boost::any& log_args)
    bool show_time_stamp = log_params.show_time_stamp;
    bool show_log_level = log_params.show_log_level;
 
-   //1. Copy the logging shm to a temporary buffer to avoid a possible race
-   //   condition (note: this may not be enough to avoid all race conditions
-   //   between the generator and controlling processes. Consider additional
-   //   inter-process semaphores to mitigate).
+   //1. Copy the logging shm to a temporary buffer so we avoid possible
+   //   race conditions (a lock is held _while_ we are doing the copying).
    //
    //2. Find the "beginning" of the log by searching the buffer for the
    //   smallest time stamp.
@@ -156,11 +168,14 @@ shared_mem_logger_retriever::getLog(boost::any& log_args)
    //
    //4. The boolean "show_tag", "show_time_stamp" and "show_log_level" will
    //   be used to specify the level of verbosity when outputting the log entries.
-
-   //1:
-   //TODO: investigate a possible race condition here.
    std::vector<char> temp_log_buf(region.get_size());
-   std::copy(shm_ptr, shm_ptr + region.get_size(), temp_log_buf.data());
+   {
+
+      //Get the shared lock while we copy the log memory.
+      scoped_lock<interprocess_mutex> lock(*mutex_ptr);
+      //1:
+      std::copy(shm_ptr, shm_ptr + region.get_size(), temp_log_buf.data());
+   }
 
    //2.
    bool found_valid_entry = false;

@@ -10,6 +10,7 @@
 #include <cstring>
 #include <iomanip>
 #include <ios>
+#include <mutex>
 
 namespace stat_log
 {
@@ -116,15 +117,13 @@ namespace detail
       //Called via the deferred processing thread
       void serialize(void* ptr)
       {
+         std::unique_lock<std::mutex> lock(mtx);
          //Visit each of the features' serialize method.
          using namespace boost::fusion;
          auto shm_ptr = reinterpret_cast<char*>(ptr);
          for_each(feature_handlers{}, [&](auto& feature_handler)
          {
             using FeatureHandlerType = std::remove_reference_t<decltype(feature_handler)>;
-            //TODO: this may be a race condition
-            // we probably need to to a semaphore "try-lock" in the write()
-            // routine and to a semaphore "down" in the serialize() method.
             FeatureHandlerType::serialize(acc, shm_ptr);
             shm_ptr += FeatureHandlerType::size();
          });
@@ -132,6 +131,7 @@ namespace detail
 
       void write(void* shared_ptr, sample_type sample)
       {
+         std::unique_lock<std::mutex> lock(mtx);
          auto ptr = reinterpret_cast<char*>(shared_ptr);
          ptr += sizeof(SharedType) - sizeof(control_word);
          auto control_word_ptr = reinterpret_cast<control_word*>(ptr);
@@ -140,7 +140,6 @@ namespace detail
          // accumulator.
          if(*control_word_ptr)
          {
-            //TODO: this may be a race condition
             acc = AccumSet{};
             *control_word_ptr = 0;
          }
@@ -150,6 +149,7 @@ namespace detail
 
    private:
       AccumSet acc;
+      std::mutex mtx;
    };
 
    template <typename AccumSet>

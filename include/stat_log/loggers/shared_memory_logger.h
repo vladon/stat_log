@@ -1,6 +1,7 @@
 #pragma once
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/mapped_region.hpp>
+#include <boost/interprocess/sync/interprocess_mutex.hpp>
 #include <stat_log/loggers/logger_common.h>
 #include <iostream>
 #include <ctime>
@@ -28,6 +29,7 @@ namespace stat_log
          boost::interprocess::mapped_region region;
          std::mutex mtx;
          char* shm_ptr;
+         boost::interprocess::interprocess_mutex* mutex_ptr;
          std::size_t currentLogEntry;
          const std::size_t numLogEntries;
    };
@@ -44,6 +46,7 @@ namespace stat_log
       private:
          boost::interprocess::mapped_region region;
          const char* shm_ptr;
+         boost::interprocess::interprocess_mutex* mutex_ptr;
          const std::size_t numLogEntries;
    };
 }

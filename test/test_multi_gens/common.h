@@ -2,10 +2,18 @@
 #include "sis_stat_tags.h"
 #include "hw_intf.h"
 
-#include "stat_log/stat_log.h"
-#include "stat_log/backends/shared_mem_backend.h"
-#include "stat_log/stats/stats_common.h"
-#include "stat_log/stats/simple_counter.h"
+#include <stat_log/stat_log.h>
+#include <stat_log/backends/shared_mem_backend.h>
+#include <stat_log/stats/stats_common.h>
+#include <stat_log/stats/simple_counter.h>
+#include <stat_log/stats/accumulator.h>
+#include <stat_log/stats/accumulator_types/count.h>
+#include <stat_log/stats/accumulator_types/min.h>
+#include <stat_log/stats/accumulator_types/max.h>
+#include <stat_log/stats/accumulator_types/mean.h>
+
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics.hpp>
 
 #include <iostream>
 #include <vector>
@@ -25,6 +33,7 @@ struct TOP_MAC_SIS
    >;
 };
 
+constexpr bool IsOperational = true;
 
 using OpStatMacSis = stat_log::LogStatOperational<TOP_MAC_SIS>;
 using ControlStatMacSis = stat_log::LogStatControl<TOP_MAC_SIS>;
@@ -35,6 +44,7 @@ using ControlStatMacSis = stat_log::LogStatControl<TOP_MAC_SIS>;
 namespace stat_log
 {
 
+   namespace ba = boost::accumulators;
    template <typename Tag>
    struct stat_tag_to_type<Tag, typename std::enable_if<
       std::is_base_of<MacBase, Tag>::value
@@ -53,6 +63,21 @@ namespace stat_log
       using type = SimpleCounter<int>;
    };
 
+   using TheAccum = ba::accumulator_set<
+         double
+         , ba::stats<
+               ba::tag::count
+             , ba::tag::min
+             , ba::tag::max
+             , ba::tag::mean
+             >
+      >;
+
+   template <>
+   struct stat_tag_to_type<HW_INTERFACE::MISC_FPGA_FAULT_TAG>
+   {
+      using type = Accumulator<TheAccum>;
+   };
 }
 
 

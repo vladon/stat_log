@@ -1,6 +1,6 @@
 #pragma once
-#include "stat_log/stats/stats_common.h"
-#include "stat_log/parsers/parser_common.h"
+#include <stat_log/stats/stats_common.h>
+#include <stat_log/parsers/parser_common.h>
 #include <iomanip>
 #include <chrono>
 #include <array>
@@ -95,6 +95,8 @@ namespace stat_log
             auto us = duration_cast<microseconds>(now.time_since_epoch());
             doWriteData(log_entry.c_str(), log_entry.size()+1, TagName, LogLevelName, tt, us % seconds{1});
          }
+
+         virtual ~LoggerGenerator(){}
       private:
          virtual void doWriteData(const char* buf, std::size_t len,
                const char* TagName, const char* LogLevelName,
@@ -106,6 +108,7 @@ namespace stat_log
    {
       public:
       virtual void getLog(boost::any& log_arg) = 0;
+      virtual ~LoggerRetriever(){}
    };
 
 

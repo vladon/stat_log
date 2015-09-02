@@ -1,5 +1,5 @@
 #pragma once
-#include "stat_log/defs.h"
+#include <stat_log/defs.h>
 
 //MAKE_STAT_TAGS is a convenience wrapper for creating statistics.
 //For example:

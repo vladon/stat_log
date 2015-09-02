@@ -1,6 +1,6 @@
 #pragma once
-#include "stat_log/stats/simple_counter.h"
-#include "stat_log/defs.h"
+#include <stat_log/stats/simple_counter.h>
+#include <stat_log/defs.h>
 #include <array>
 #include <boost/any.hpp>
 #include <type_traits>

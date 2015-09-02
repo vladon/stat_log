@@ -1,5 +1,5 @@
 #pragma once
-#include "stat_log/util/make_stat_tags.h"
+#include <stat_log/util/make_stat_tags.h>
 
 struct HwIntfBase {};
 

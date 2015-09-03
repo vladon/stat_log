@@ -10,6 +10,5 @@ int main(int argc, char** argv)
    genStats_HW_INTF();
 
    std::this_thread::sleep_for(std::chrono::seconds{10});
-   stat_log::getStatSingleton<OpStat>().stop();
    return 0;
 }

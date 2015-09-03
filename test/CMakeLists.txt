@@ -1,6 +1,6 @@
 macro(stat_log_link_libs test_name)
-    TARGET_LINK_LIBRARIES (${test_name}_generator ${Boost_LIBRARIES} ${test_name} stat_log)
-    TARGET_LINK_LIBRARIES (${test_name}_controller ${Boost_LIBRARIES} ${test_name} stat_log)
+    TARGET_LINK_LIBRARIES (${test_name}_generator ${test_name} stat_log ${Boost_LIBRARIES})
+    TARGET_LINK_LIBRARIES (${test_name}_controller ${test_name} stat_log ${Boost_LIBRARIES})
     if(UNIX AND NOT APPLE)
         #librt is needed for boost shared_memory on linux
         # but not on apple, apparently.
@@ -10,5 +10,5 @@ macro(stat_log_link_libs test_name)
 endmacro()
 
 include_directories(include)
-add_subdirectory(test_multi_gens)
-add_subdirectory(test_stat_proxy)
+add_subdirectory(test_basic)
+add_subdirectory(test_full)

@@ -150,14 +150,28 @@ shared_mem_logger_retriever::shared_mem_logger_retriever(
      numLogEntries((shm_size - lock_size)/bytes_per_log_buf)
 {
    using namespace boost::interprocess;
-   shared_memory_object shm_obj
-      ( open_only
-       ,shm_name.c_str()
-       ,read_write
-      );
-   region = mapped_region{shm_obj, read_write};
-   mutex_ptr = reinterpret_cast<interprocess_mutex*>(region.get_address());
-   shm_ptr = reinterpret_cast<const char*>(region.get_address()) + lock_size;
+   try
+   {
+      shared_memory_object shm_obj
+         ( open_only
+           ,shm_name.c_str()
+           ,read_write
+         );
+      region = mapped_region{shm_obj, read_write};
+      mutex_ptr = reinterpret_cast<interprocess_mutex*>(region.get_address());
+      shm_ptr = reinterpret_cast<const char*>(region.get_address()) + lock_size;
+   }
+   catch(boost::interprocess::interprocess_exception& e)
+   {
+      std::cerr << "Could not open logger shared memory = " << shm_name
+         << ".  Is the generator program running?" << std::endl;
+      std::exit(1);
+   }
+   catch(...)
+   {
+      std::cerr << "Unknown exception in shared_mem_logger_retriever ctor!\n";
+      std::exit(1);
+   }
 }
 
 void

@@ -167,9 +167,17 @@ struct LogStatControl :
          .theProxy.dimensionNames = dimNames;
    }
 
-   void outputLog(int logger_idx, boost::any& log_args)//int logger_idx, const std::string& output_filename)
+   void outputLog(int logger_idx, boost::any& log_args)
    {
-      assert(logger_idx <= (int)loggers.size());
+      if(logger_idx >= (int)loggers.size())
+      {
+         std::cout << "Invalid log index = " << logger_idx;
+         if(loggers.empty())
+            std::cout << ". No configured loggers!\n";
+         else
+            std::cout << ". Valid indices = 0..."<< loggers.size() - 1 << std::endl;
+         std::exit(1);
+      }
       loggers[logger_idx]->getLog(log_args);
       std::exit(0);
    }

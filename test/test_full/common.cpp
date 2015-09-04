@@ -10,14 +10,16 @@
 #include <stat_log/stats/simple_counter.h>
 #include <stat_log/stats/simple_status.h>
 #include <stat_log/stats/stat_array.h>
+#if 1
 #include <stat_log/stats/accumulator.h>
 #include <stat_log/stats/accumulator_types/count.h>
 #include <stat_log/stats/accumulator_types/min.h>
 #include <stat_log/stats/accumulator_types/max.h>
 #include <stat_log/stats/accumulator_types/mean.h>
-#include <stat_log/stats/accumulator_types/histogram.h>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
+#include <stat_log/stats/accumulator_types/histogram.h>
+#endif
 
 #include <type_traits>
 
@@ -43,8 +45,9 @@ using LogRet = stat_log::shared_mem_logger_retriever;
  *********************************/
 namespace stat_log
 {
-   template <typename Tag>
-   struct stat_tag_to_type<Tag>
+   //Default stat
+   template <typename Tag, class Enable>
+   struct stat_tag_to_type
    {
       using type = SimpleCounter<int>;
    };
@@ -56,12 +59,24 @@ namespace stat_log
       using type = StatArray<4, StatArray<6, ChildStat>>;
    };
 
+   //Default "HwIntf" stat
+   template <typename Tag>
+   struct stat_tag_to_type<Tag,
+               std::enable_if_t<
+                 std::is_base_of<HwIntfBase, Tag>::value
+               >
+            >
+   {
+      using type = SimpleCounter<int>;
+   };
+
+#if 1
 #if 1
    using TheAccum = stat_log::HistogramCount<
       double,
-      0,
-      10,
-      10
+      0, //start bin
+      10,//stop bin
+      10 //num bins
          >;
 #else
    using TheAccum = ba::accumulator_set<
@@ -75,11 +90,13 @@ namespace stat_log
       >;
 #endif
 
+   //Complete specialization for the HW FAULT
    template <>
    struct stat_tag_to_type<HW_INTERFACE::MISC_FPGA_FAULT_TAG>
    {
       using type = Accumulator<TheAccum>;
    };
+#endif
 }
 
 /*********************************
@@ -159,7 +176,7 @@ namespace stat_log
          TagBelongsToStat<Tag, MacSisOpStat>::value,
          MacSisOpStat,
          HwIntfOpStat>;
-      stat_log::getStatSingleton<TheOpStat>().writeStat<Tag>(args...);
+      stat_log::getStatSingleton<TheOpStat>().template writeStat<Tag>(args...);
    }
 
    //EXPLICIT TEMPLATE INSTANTIATIONS

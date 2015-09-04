@@ -51,7 +51,8 @@ namespace impl
     struct histogram_impl
       : accumulator_base
     {
-        typedef typename numeric::functional::average<Sample, std::size_t>::result_type float_type;
+        // typedef typename numeric::functional::average<Sample, std::size_t>::result_type float_type;
+        using float_type = double;
         typedef std::vector<std::pair<float_type, float_type> > histogram_type;
         typedef std::vector<float_type> array_type;
         // for boost::result_of

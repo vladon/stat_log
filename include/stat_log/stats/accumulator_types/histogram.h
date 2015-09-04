@@ -1,5 +1,6 @@
 #pragma once
 #include <stat_log/stats/accumulator_types/boost_hist.hpp>
+#include <stat_log/stats/accumulator.h>
 #include <boost/accumulators/statistics.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/mpl/vector.hpp>

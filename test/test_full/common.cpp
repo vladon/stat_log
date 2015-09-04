@@ -16,9 +16,10 @@
 #include <stat_log/stats/accumulator_types/min.h>
 #include <stat_log/stats/accumulator_types/max.h>
 #include <stat_log/stats/accumulator_types/mean.h>
+#include <stat_log/stats/accumulator_types/histogram.h>
+
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
-#include <stat_log/stats/accumulator_types/histogram.h>
 #endif
 
 #include <type_traits>
@@ -70,6 +71,7 @@ namespace stat_log
       using type = SimpleCounter<int>;
    };
 
+   namespace ba = boost::accumulators;
 #if 1
 #if 1
    using TheAccum = stat_log::HistogramCount<

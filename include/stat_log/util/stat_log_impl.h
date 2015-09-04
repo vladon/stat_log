@@ -116,114 +116,135 @@ namespace detail
    ///////////////
 
    template <typename T>
-      struct is_parent
-      {
-         //T is of type "struct TagNode"
-         //Then T::child_list should be either another sequence (if parent) or void
-         using type = typename mpl::is_sequence<typename T::child_list>::type;
-         static const bool value = mpl::is_sequence<typename T::child_list>::value;
-      };
+   struct is_parent
+   {
+      //T is of type "struct TagNode"
+      //Then T::child_list should be either another sequence (if parent) or void
+      using type = typename mpl::is_sequence<typename T::child_list>::type;
+      static const bool value = mpl::is_sequence<typename T::child_list>::value;
+   };
 
    template <typename GlobalTagVec, typename ParentVec,
              typename ThisStat ,typename IsOpType
              >
-      struct stat_inserter
-      {
-         //ThisStat is of type "struct TagNode"
-         using this_stat = typename std::conditional_t<
-            IsOpType::value,
-            GenericOpStat<ThisStat>,
-            GenericControlStat<ThisStat>
-         >;
+   struct stat_inserter
+   {
+      //ThisStat is of type "struct TagNode"
+      using this_stat = typename std::conditional_t<
+         IsOpType::value,
+         GenericOpStat<ThisStat>,
+         GenericControlStat<ThisStat>
+      >;
 
-         //Finally add this statistic to the global tag vec
-         using type = typename mpl::push_front<GlobalTagVec, this_stat>::type;
-      };
+      //Finally add this statistic to the global tag vec
+      using type = typename mpl::push_front<GlobalTagVec, this_stat>::type;
+   };
 
    template <typename GlobalTagVec, typename ParentVec,
              typename TagHierarchy , typename IsOpType
              >
-      struct stat_creator_helper
-      {
+   struct stat_creator_helper
+   {
 
-         using ThisLineage = typename mpl::push_front<ParentVec,
-               typename TagHierarchy::tag>::type;
-         using ChildTagHierarchy = typename TagHierarchy::child_list;
-         using this_logger = typename std::conditional_t<
-               IsOpType::value,
-               GenericOpLogger<TagHierarchy>,
-               GenericControlLogger<TagHierarchy>
-            >;
+      using ThisLineage = typename mpl::push_front<ParentVec,
+            typename TagHierarchy::tag>::type;
+      using ChildTagHierarchy = typename TagHierarchy::child_list;
+      using this_logger = typename std::conditional_t<
+            IsOpType::value,
+            GenericOpLogger<TagHierarchy>,
+            GenericControlLogger<TagHierarchy>
+         >;
 
-         using UpdatedGlobalTagVec = typename mpl::push_front<
-            GlobalTagVec, this_logger>::type;
+      using UpdatedGlobalTagVec = typename mpl::push_front<
+         GlobalTagVec, this_logger>::type;
 
-         // _1 == UpdatedGlobalTagVec
-         // _2 == the iterator to the child TagNode
-         using type = typename mpl::fold<
-               ChildTagHierarchy,
-               UpdatedGlobalTagVec,
-               mpl::eval_if<
-                  is_parent<mpl::_2>,
-                  stat_creator_helper<
-                     mpl::_1, ThisLineage, mpl::_2, IsOpType
-                  >,
-                  stat_inserter<mpl::_1, ThisLineage, mpl::_2, IsOpType
-                  >
+      // _1 == UpdatedGlobalTagVec
+      // _2 == the iterator to the child TagNode
+      using type = typename mpl::fold<
+            ChildTagHierarchy,
+            UpdatedGlobalTagVec,
+            mpl::eval_if<
+               is_parent<mpl::_2>,
+               stat_creator_helper<
+                  mpl::_1, ThisLineage, mpl::_2, IsOpType
+               >,
+               stat_inserter<mpl::_1, ThisLineage, mpl::_2, IsOpType
                >
-            >::type;
-      };
+            >
+         >::type;
+   };
 
    template <typename TagHierarchy, bool IsOperational>
-      struct stat_creator
-      {
-         using type = typename stat_creator_helper<
-            mpl::list<>, //Global Tag/Stat list
-            mpl::list<>, //Parent list
-            TagHierarchy,
-            //Need to wrap the boolean to be nice to the MPL algorithms
-            typename std::integral_constant<bool, IsOperational>
-            >::type;
-      };
+   struct stat_creator
+   {
+      using type = typename stat_creator_helper<
+         mpl::list<>, //Global Tag/Stat list
+         mpl::list<>, //Parent list
+         TagHierarchy,
+         //Need to wrap the boolean to be nice to the MPL algorithms
+         typename std::integral_constant<bool, IsOperational>
+         >::type;
+   };
 
-   template <typename Tag>
-      struct matches_tag
+   //This template is used in conjunction with an MPL algorithm
+   // with the same semantics as mpl::find_if.
+   //BoolFunc is the "condition" metafunction.
+   //StatTagFunc is a metafunction that transforsms the given
+   //   stat_tag into something the algorithm requires.
+   //   For example the "Identity" metafunction would work here.
+   //StatTagArgs is extra arguments to the BoolFunc
+   template <template<typename...> class BoolFunc,
+             template<typename...> class StatTagFunc,
+             class... StatTagArgs>
+   struct tag_node_query
+   {
+      template<typename T>
+      struct apply
       {
-         template <typename Repr>
-            struct apply
-            : std::is_same<Tag, typename Repr::tag>::type
-            {};
+         using stat_tag = typename T::tag;
+         using type = std::integral_constant
+            <
+               bool,
+               BoolFunc<
+                  typename StatTagFunc<stat_tag>::type,
+                  StatTagArgs...
+               >::value
+            >;
       };
+   };
+
+   template <typename Tag>  using matches_tag
+      = tag_node_query<std::is_same, Identity, Tag>;
 
    template <typename T, typename P, int Depth, typename C = void>
-      struct TagNode
-      {
-         SL_NAME = T::name;
-         using tag = T;
-         using parent = P;
-         static const int depth = Depth;
-         using child_list = C;
-      };
+   struct TagNode
+   {
+      SL_NAME = T::name;
+      using tag = T;
+      using parent = P;
+      static const int depth = Depth;
+      using child_list = C;
+   };
 
-   template <typename T, typename Parent, typename Depth, typename Dummy = void>
-      struct GenTagHierarchy
-      {
-         using type = TagNode<T, Parent, Depth::value>;
-      };
+   template <typename T, typename Parent, typename Depth, class Dummy = void>
+   struct GenTagHierarchy
+   {
+      using type = TagNode<T, Parent, Depth::value>;
+   };
 
    template <typename T, typename Parent, typename Depth>
-      struct GenTagHierarchy<T, Parent, Depth,
-         typename AlwaysVoid<typename T::ChildTypes>::type>
-      {
-         using ChildTypes = typename T::ChildTypes;
-         using ChildDepth = std::integral_constant<int, Depth::value + 1>;
-         using child_type_vec = typename boost::mpl::transform<
-            ChildTypes, GenTagHierarchy<boost::mpl::_, T, ChildDepth>>::type;
-         using type = TagNode<T, Parent, Depth::value, child_type_vec>;
-      };
+   struct GenTagHierarchy<T, Parent, Depth,
+      typename AlwaysVoid<typename T::ChildTypes>::type>
+   {
+      using ChildTypes = typename T::ChildTypes;
+      using ChildDepth = std::integral_constant<int, Depth::value + 1>;
+      using child_type_vec = typename boost::mpl::transform<
+         ChildTypes, GenTagHierarchy<boost::mpl::_, T, ChildDepth>>::type;
+      using type = TagNode<T, Parent, Depth::value, child_type_vec>;
+   };
 
    template <typename UserStatDefs, bool IsOperational, typename Derived>
-      struct LogStatBase
+   struct LogStatBase
    {
       struct TopName
       {
@@ -285,9 +306,9 @@ namespace detail
    };
 
    template<typename Tag, typename T>
-      auto getStatHandleView(T& stats)
-      {
-         return boost::fusion::filter_view<T, detail::matches_tag<Tag>>(stats);
-      }
+   auto getStatHandleView(T& stats)
+   {
+      return boost::fusion::filter_view<T, detail::matches_tag<Tag>>(stats);
+   }
 }
 }

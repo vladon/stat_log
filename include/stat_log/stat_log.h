@@ -4,12 +4,14 @@
 #include <stat_log/stats/stats_common.h>
 
 #include <boost/algorithm/string/join.hpp>
+#include <boost/mpl/find_if.hpp>
 #include <boost/any.hpp>
 
 #include <thread>
 #include <chrono>
 #include <memory>
 #include <vector>
+#include <type_traits>
 
 namespace stat_log
 {
@@ -31,6 +33,7 @@ template <typename UserStatH>
 struct LogStatOperational :
    detail::LogStatBase<UserStatH, true, LogStatOperational<UserStatH>>
 {
+   using BaseClass = typename detail::LogStatBase<UserStatH, true, LogStatOperational<UserStatH>>;
    template <typename LogTag>
    LogGenProxy getLog(std::size_t log_idx, int log_level)
    {
@@ -80,29 +83,45 @@ struct LogStatOperational :
       detail::getStatHandle<StatTag>(this->theStats).theProxy.writeVal(args...);
    }
 
+   //This bit of MPL-magic tests is ANY of the statistics in the hierarchy
+   //require deferred serialization.
+   static constexpr bool need_deferred_serialization =
+     !std::is_same
+        <
+           typename boost::mpl::end<typename BaseClass::TheStats>::type,
+           typename boost::mpl::find_if
+           <
+              typename BaseClass::TheStats,
+              detail::tag_node_query<is_serialization_deferred,
+                                     stat_tag_to_type>
+           >::type
+        >::value;
+
+
    //This method will be called by the base class once it is done with
    // its init().
    //TODO: I would really like this method to be private because
    // the user should NOT call it directly.  The problem is
    // i still need the base class to call it...
-   //TODO: The creation of this thread should either be a policy
-   // OR we should do a compile-time check for any stats requiring
-   // deferred serialization, and if there are any, THEN start
-   // the thread.
    void doInit()
    {
-      serialization_thread = std::thread([this]()
+      //Only kick off a deferred serialization thread if you need to
+      // e.g., if there is at least one stat requiring it.
+      if(need_deferred_serialization)
       {
-         serializer_running = true;
-         while(serializer_running)
+         serialization_thread = std::thread([this]()
          {
-            for_each(this->theStats, [](auto &stat)
+            serializer_running = true;
+            while(serializer_running)
             {
-               stat.doSerialize();
-            });
-            std::this_thread::sleep_for(std::chrono::seconds{1});
-         }
-      });
+               for_each(this->theStats, [](auto &stat)
+               {
+                  stat.doSerialize();
+               });
+               std::this_thread::sleep_for(std::chrono::seconds{1});
+            }
+         });
+      }
    }
 
    void doStop()

@@ -4,8 +4,18 @@
 
 namespace stat_log
 {
+   //void_t is broken on gcc :(
+   // so I will use "AlwaysVoid" instead.
+   // template <class...> using void_t = void;
    template <typename U> struct AlwaysVoid {
       typedef void type;
+   };
+
+
+   template <typename T>
+   struct Identity
+   {
+      using type = T;
    };
 }
 
@@ -13,6 +23,7 @@ namespace stat_log
 //Useful for printing types (for debugging)
 #if 0
 #include <cxxabi.h>
+#include <iostream>
 template <typename T>
 struct TypeId { };
 

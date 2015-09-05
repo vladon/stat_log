@@ -83,7 +83,7 @@ struct LogStatOperational :
       detail::getStatHandle<StatTag>(this->theStats).theProxy.writeVal(args...);
    }
 
-   //This bit of MPL-magic tests is ANY of the statistics in the hierarchy
+   //This bit of MPL-magic tests if ANY of the statistics in the hierarchy
    //require deferred serialization.
    static constexpr bool need_deferred_serialization =
      !std::is_same

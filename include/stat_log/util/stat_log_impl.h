@@ -189,7 +189,7 @@ namespace detail
    //This template is used in conjunction with an MPL algorithm
    // with the same semantics as mpl::find_if.
    //BoolFunc is the "condition" metafunction.
-   //StatTagFunc is a metafunction that transforsms the given
+   //StatTagFunc is a metafunction that transforms the given
    //   stat_tag into something the algorithm requires.
    //   For example the "Identity" metafunction would work here.
    //StatTagArgs is extra arguments to the BoolFunc

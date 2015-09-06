@@ -8,6 +8,7 @@
 #include <string>
 #include <algorithm>
 #include <vector>
+#include <iostream>
 
 #define TERM_NUM_COLUMNS 100
 
@@ -16,7 +17,7 @@ namespace stat_log
 namespace detail
 {
    namespace po = boost::program_options;
-   po::options_description getParentOptions()
+   po::options_description getProgramOptions()
    {
       po::options_description desc("Options", TERM_NUM_COLUMNS);
       desc.add_options()
@@ -52,6 +53,8 @@ namespace detail
 
    void indent(size_t level)
    {
+      if(level <= 0)
+         return;
       int i = level;
       while(i-- > 0)
          std::cout << "\t";
@@ -83,7 +86,7 @@ std::string getComponentName(std::string cmd_line)
 {
    namespace po = boost::program_options;
    std::string component_str;
-   auto desc = detail::getParentOptions();
+   auto desc = detail::getProgramOptions();
 
    po::variables_map vm;
    po::store(po::command_line_parser(tokenize(cmd_line))
@@ -109,5 +112,35 @@ getHeadTail(std::string s, char delim)
       std::get<0>(ret) =  s;
    }
    return ret;
+}
+
+
+namespace
+{
+   size_t starting_tag_depth = 0;
+}
+
+void setStartingDepth(size_t start_depth)
+{
+   starting_tag_depth = start_depth;
+}
+
+void printHeader(StatCmd cmd, const TagInfo& tag_info)
+{
+   if(printingRequired(cmd))
+   {
+      detail::indent(tag_info.depth - starting_tag_depth);
+      std::cout << tag_info.name << std::endl;
+      detail::indent(tag_info.depth - starting_tag_depth);
+      std::cout << "  ";
+   }
+}
+
+void printFooter(StatCmd cmd)
+{
+   if(printingRequired(cmd))
+   {
+      std::cout << std::endl;
+   }
 }
 }

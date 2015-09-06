@@ -1,29 +1,29 @@
 #pragma once
 #include <stat_log/util/make_stat_tags.h>
 
-struct SisBase{};
-
-struct SIS
+namespace sis
 {
-   SL_NAME = "SIS";
+   struct SisBase{};
 
-   MAKE_STAT_TAG_STRUCT_BASE(MAC_PKTS_DOWN, SisBase)
-   MAKE_STAT_TAG_STRUCT_BASE(MAC_PKTS_UP, SisBase)
+   SL_MAKE_TAGS_NAMED_BASE(
+               StatTags,
+               SisBase,
+               (MAC_PKTS_DOWN)
+               (MAC_PKTS_UP)
+               (LINK_QUALITY)
+               (RECEIVE_STATUS)
+               (LINK_STATUS)
+         );
 
-   struct PER_NBR_STATS{
-      SL_NAME = "PER_NBR_STATS";
-      MAKE_STAT_TAGS_NAMED_BASE(
-            SisBase,
-         (LINK_QUALITY)
-         (RECEIVE_STATUS)
-         (LINK_STATUS)
-      )
+
+   struct SIS_STATS
+   {
+      SL_NAME = "SIS";
+      using children = StatTags;
    };
 
-   using ChildTypes = MAKE_STAT_LIST(
-      (MAC_PKTS_DOWN_TAG)
-      (MAC_PKTS_UP_TAG)
-      (PER_NBR_STATS)
-    );
-};
-
+   struct SIS_LOG
+   {
+      SL_NAME = "SIS";
+   };
+}

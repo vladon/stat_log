@@ -4,7 +4,6 @@
 #include <stat_log/stats/stats_common.h>
 
 #include <boost/algorithm/string/join.hpp>
-#include <boost/mpl/find_if.hpp>
 #include <boost/any.hpp>
 
 #include <thread>
@@ -18,33 +17,31 @@ namespace stat_log
 
 namespace detail
 {
-   template <typename StatTag, typename Stats>
-   auto& getStatHandle(Stats& theStats)
+   template <typename Tag, typename T>
+   auto& getHandle(T& type_node_list)
    {
-      auto statHdlView = getStatHandleView<StatTag>(theStats);
-      static_assert(boost::fusion::result_of::size<decltype(statHdlView)>::value == 1,
-            "Require a SINGLE matching tag in getStatHandle!");
-      auto& stat_hdl = boost::fusion::deref(boost::fusion::begin(statHdlView));
+      auto view = getView<Tag>(type_node_list);
+      static_assert(boost::fusion::result_of::size<decltype(view)>::value == 1,
+            "Require a SINGLE matching tag in getHandle!");
+      auto& stat_hdl = boost::fusion::deref(boost::fusion::begin(view));
       return stat_hdl;
    }
 }
 
-template <typename UserStatH>
+template <typename StatTagTree, typename LogTagTree>
 struct LogStatOperational :
-   detail::LogStatBase<UserStatH, true, LogStatOperational<UserStatH>>
+   detail::LogStatBase<StatTagTree, LogTagTree, true, LogStatOperational>
 {
-   using BaseClass = typename detail::LogStatBase<UserStatH, true, LogStatOperational<UserStatH>>;
+   using BaseClass = typename
+      detail::LogStatBase<StatTagTree, LogTagTree, true, LogStatOperational>;
    template <typename LogTag>
    LogGenProxy getLog(std::size_t log_idx, int log_level)
    {
       assert(log_idx <= loggers.size());
-      auto& log_hdl = detail::getStatHandle<LogTag>(this->theStats);
+      auto& log_hdl = detail::getHandle<LogTag>(this->theLogs);
       using LogHdlType = std::remove_reference_t<decltype(log_hdl)>;
-      static_assert(
-            LogHdlType::IsParent == true,
-            "Require a parent_node for getLog!");
 
-      auto cur_log_level = log_hdl.theProxy.getLevel(log_idx);
+      auto cur_log_level = log_hdl.getLevel(log_idx);
       return LogGenProxy {
          *loggers[log_idx],
          log_level >= cur_log_level,
@@ -80,22 +77,19 @@ struct LogStatOperational :
    template <typename StatTag, typename... Args>
    void writeStat(Args... args)
    {
-      detail::getStatHandle<StatTag>(this->theStats).theProxy.writeVal(args...);
+      detail::getHandle<StatTag>(this->theStats).writeVal(args...);
    }
 
    //This bit of MPL-magic tests if ANY of the statistics in the hierarchy
    //require deferred serialization.
    static constexpr bool need_deferred_serialization =
-     !std::is_same
-        <
-           typename boost::mpl::end<typename BaseClass::TheStats>::type,
-           typename boost::mpl::find_if
-           <
-              typename BaseClass::TheStats,
-              detail::tag_node_query<is_serialization_deferred,
-                                     stat_tag_to_type>
-           >::type
-        >::value;
+      detail::is_found_in_list<
+         typename BaseClass::TheStats,
+         detail::tag_node_query<
+            is_serialization_deferred,
+            stat_tag_to_type
+         >
+      >::value;
 
 
    //This method will be called by the base class once it is done with
@@ -144,14 +138,15 @@ struct LogStatOperational :
    bool serializer_running = false;
 };
 
-template <typename UserStatH>
+template <typename StatTagTree, typename LogTagTree>
 struct LogStatControl :
-   detail::LogStatBase<UserStatH, false, LogStatControl<UserStatH>>
+   detail::LogStatBase<StatTagTree, LogTagTree, false, LogStatControl>
 {
-   using BaseClass = detail::LogStatBase<
-      UserStatH, false, LogStatControl<UserStatH>>;
+   using BaseClass = typename
+      detail::LogStatBase<StatTagTree, LogTagTree, false, LogStatControl>;
    using TopNode = typename BaseClass::TopNode;
-   using TagHierarchy = typename BaseClass::TagHierarchy;
+   using StatTagHierarchy = typename BaseClass::StatTagHierarchy;
+   using LogTagHierarchy = typename BaseClass::LogTagHierarchy;
 
    void parseUserCommands(int argc, char** argv)
    {
@@ -163,27 +158,60 @@ struct LogStatControl :
 
       std::string user_cmd_line = boost::algorithm::join(user_strings, " ");
       std::string component_str = getComponentName(user_cmd_line);
-      parse<TagHierarchy>(*this, component_str, user_cmd_line);
+      parse<StatTagHierarchy>(*this, component_str, user_cmd_line);
+      parse<LogTagHierarchy>(*this, component_str, user_cmd_line);
    }
 
-   template <typename StatTag>
-   void sendCommand(StatCmd cmd, boost::any& cmd_arg)
+   template <typename StatTagNode>
+   std::enable_if_t<
+      detail::is_found_in_list
+      <
+         typename BaseClass::TheStats,
+         detail::matches_tag<typename StatTagNode::tag>
+      >::value
+   >
+   sendCommand(StatCmd cmd, boost::any& cmd_arg)
    {
-      detail::getStatHandle<StatTag>(this->theStats).theProxy.doCommand(cmd, cmd_arg);
+      TagInfo tag_info{StatTagNode::name, StatTagNode::depth, true};
+      detail::getHandle<typename StatTagNode::tag>(this->theStats)
+         .doCommand(cmd, cmd_arg, tag_info);
+   }
+
+   template <typename LogTagNode>
+   std::enable_if_t<
+      detail::is_found_in_list
+      <
+         typename BaseClass::TheLogs,
+         detail::matches_tag<typename LogTagNode::tag>
+      >::value
+   >
+   sendCommand(StatCmd cmd, boost::any& cmd_arg)
+   {
+      TagInfo tag_info{LogTagNode::name, LogTagNode::depth, false};
+      detail::getHandle<typename LogTagNode::tag>(this->theLogs)
+         .doCommand(cmd, cmd_arg, tag_info);
    }
 
    template <typename StatTag>
    void assignEnumerationNames(const std::vector<std::string>& enumNames)
    {
-      detail::getStatHandle<StatTag>(this->theStats)
-         .theProxy.enumerationNames = enumNames;
+      //TODO: design this better ..
+#if 0
+      detail::getHandle<StatTag>(this->theStats)
+      .theProxy.enumerationNames = enumNames;
+#endif
+
    }
 
    template <typename StatTag>
    void assignDimensionNames(const std::vector<std::string>& dimNames)
    {
-      detail::getStatHandle<StatTag>(this->theStats)
-         .theProxy.dimensionNames = dimNames;
+      //TODO: design this better ..
+#if 0
+      detail::getHandle<StatTag>(this->theStats)
+      .theProxy.dimensionNames = dimNames;
+#endif
+
    }
 
    void outputLog(int logger_idx, boost::any& log_args)

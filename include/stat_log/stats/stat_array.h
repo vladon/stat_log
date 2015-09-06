@@ -22,12 +22,16 @@ namespace stat_log
             stat_type::write(shared_ptr, value);
          }
 
-         static void doStatCommand(void* shared_ptr, StatCmd cmd, boost::any& arg,
+         static void doStatCommand(void* shared_ptr,
+            StatCmd cmd,
+            boost::any& arg,
+            const TagInfo& tag_info,
+            bool is_substat,
             const std::vector<std::string>& enumNames,
             const std::vector<std::string>& dimensionNames,
             int dimension_idx)
          {
-            stat_type::doStatCommand(shared_ptr, cmd, arg,
+            stat_type::doStatCommand(shared_ptr, cmd, arg, tag_info, true,
                   enumNames, dimensionNames, dimension_idx);
          }
       };
@@ -48,12 +52,14 @@ namespace stat_log
             traits<stat_type>::write(shared_ptr, value);
          }
 
-         static void doStatCommand(void* shared_ptr, StatCmd cmd, boost::any& arg,
+         static void doStatCommand(void* shared_ptr,
+            StatCmd cmd, boost::any& arg, const TagInfo& tag_info,
+            bool is_substat,
             const std::vector<std::string>& enumNames,
             const std::vector<std::string>& dimensionNames,
             int dimension_idx)
          {
-            traits<stat_type>::doStatCommand(shared_ptr, cmd, arg,
+            traits<stat_type>::doStatCommand(shared_ptr, cmd, arg, tag_info, true,
                   enumNames, dimensionNames, dimension_idx);
          }
       };
@@ -85,7 +91,9 @@ namespace stat_log
          write_idx(shared_ptr, idx, args...);
       }
 
-      static void doStatCommand(void* shared_ptr, StatCmd cmd, boost::any& arg,
+      static void doStatCommand(void* shared_ptr,
+            StatCmd cmd, boost::any& arg, const TagInfo& tag_info,
+            bool is_substat,
             const std::vector<std::string>& enumNames,
             const std::vector<std::string>& dimensionNames,
             int dimension_idx)
@@ -93,17 +101,23 @@ namespace stat_log
          auto& theArray = *reinterpret_cast<SharedType*>(shared_ptr);
          if(dimension_idx == 0 && !dimensionNames.empty())
             std::cout << dimensionNames[0] << "\n";
-         //TODO: handle all commands
-         if(printingRequired(cmd, false))
+         if(!is_substat)
+            printHeader(cmd, tag_info);
+         if(printingRequired(cmd))
          {
-            std::cout << "STAT_ARRAY: " << std::endl;
+            if(!is_substat)
+               std::cout << std::endl;
+            if(cmd == StatCmd::PRINT_STAT_TYPE)
+            {
+               std::cout << "STAT_ARRAY" << std::endl;
+            }
             std::cout << std::dec << "[";
          }
          for(size_t i = 0; i < Size; ++i)
          {
-            stat_array_detail::traits<Repr>::doStatCommand((void*)&theArray[i], cmd, arg,
-                  enumNames, dimensionNames, dimension_idx+1);
-            if(printingRequired(cmd, false))
+            stat_array_detail::traits<Repr>::doStatCommand((void*)&theArray[i],
+                  cmd, arg, tag_info, true, enumNames, dimensionNames, dimension_idx+1);
+            if(printingRequired(cmd))
             {
                if(i < Size - 1)
                   std::cout << ", ";
@@ -111,6 +125,8 @@ namespace stat_log
                   std::cout << "]";
             }
          }
+         if(!is_substat)
+            printFooter(cmd);
       }
    };
 
@@ -129,15 +145,22 @@ namespace stat_log
          StatArray<N,Repr>::write(child_ptr, args...);
       }
 
-      static void doStatCommand(void* shared_ptr, StatCmd cmd, boost::any& arg,
+      static void doStatCommand(void* shared_ptr,
+            StatCmd cmd,
+            boost::any& arg,
+            const TagInfo& tag_info,
+            bool is_substat,
             const std::vector<std::string>& enumNames,
             const std::vector<std::string>& dimensionNames,
             int dimension_idx)
       {
          auto& theArray = *reinterpret_cast<SharedType*>(shared_ptr);
          //TODO: handle all commands
-         if(printingRequired(cmd, false))
+         if(!is_substat)
+            printHeader(cmd, tag_info);
+         if(printingRequired(cmd))
          {
+            std::cout << std::endl;
             if(cmd == StatCmd::PRINT_STAT_TYPE)
             {
                std::cout << "STAT_ARRAY" << std::endl;
@@ -152,16 +175,18 @@ namespace stat_log
          for(size_t i = 0; i < Size; ++i)
          {
             auto child_ptr = reinterpret_cast<void*>(&theArray[i]);
-            StatArray<N,Repr>::doStatCommand(child_ptr, cmd, arg,
-                  enumNames, dimensionNames, dimension_idx+1);
-            if(printingRequired(cmd, false))
+            StatArray<N,Repr>::doStatCommand(child_ptr, cmd, arg, tag_info,
+                  true, enumNames, dimensionNames, dimension_idx+1);
+            if(printingRequired(cmd))
             {
                if(i < Size - 1)
-                  std::cout << ", ";
+                  std::cout << ",\n ";
                else
                   std::cout << "]";
             }
          }
+         if(!is_substat)
+            printFooter(cmd);
       }
    };
 

@@ -3,6 +3,6 @@
 
 void genStats_MAC()
 {
-   stat_log::writeStat<MAC::IP_PKTS_UP_TAG>(1);
+   stat_log::writeStat<mac::IP_PKTS_UP_TAG>(1);
 }
 

@@ -55,13 +55,20 @@ namespace stat_log
             return sizeof(SharedType);
          }
 
-         void doCommand(StatCmd cmd, boost::any& cmd_arg)
+         void doCommand(StatCmd cmd, boost::any& cmd_arg, const TagInfo& tag_info)
          {
+            if(false == isLogCommand(cmd))
+               return;
+            printHeader(cmd, tag_info);
             if(cmd == StatCmd::LOG_LEVEL)
             {
                auto logLevelCmd = boost::any_cast<LogLevelCommand>(cmd_arg);
                int log_idx = logLevelCmd.logger_idx;
-               assert(log_idx < (int)SharedType{}.size());
+               if(log_idx >= (int)SharedType{}.size())
+               {
+                  std::cout << "Invalid log index = " << log_idx << std::endl;
+                  std::exit(1);
+               }
                auto& log_level_idx = (*shared_ptr)[log_idx];
                if(logLevelCmd.set_log_level)
                {
@@ -79,6 +86,7 @@ namespace stat_log
                }
                std::cout << "LOG LEVEL = " << LogLevelNames[log_level_idx] << std::endl;
             }
+            printFooter(cmd);
          }
       };
    }

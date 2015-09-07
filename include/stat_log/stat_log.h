@@ -196,28 +196,6 @@ struct LogStatControl :
          .doCommand(cmd, cmd_arg, tag_info);
    }
 
-   template <typename StatTag>
-   void assignEnumerationNames(const std::vector<std::string>& enumNames)
-   {
-      //TODO: design this better ..
-#if 0
-      detail::getHandle<StatTag>(this->theStats)
-      .theProxy.enumerationNames = enumNames;
-#endif
-
-   }
-
-   template <typename StatTag>
-   void assignDimensionNames(const std::vector<std::string>& dimNames)
-   {
-      //TODO: design this better ..
-#if 0
-      detail::getHandle<StatTag>(this->theStats)
-      .theProxy.dimensionNames = dimNames;
-#endif
-
-   }
-
    void outputLog(int logger_idx, boost::any& log_args)
    {
       if(logger_idx >= (int)loggers.size())

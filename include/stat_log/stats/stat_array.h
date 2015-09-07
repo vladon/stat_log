@@ -26,13 +26,9 @@ namespace stat_log
             StatCmd cmd,
             boost::any& arg,
             const TagInfo& tag_info,
-            bool is_substat,
-            const std::vector<std::string>& enumNames,
-            const std::vector<std::string>& dimensionNames,
-            int dimension_idx)
+            bool is_substat)
          {
-            stat_type::doStatCommand(shared_ptr, cmd, arg, tag_info, true,
-                  enumNames, dimensionNames, dimension_idx);
+            stat_type::doStatCommand(shared_ptr, cmd, arg, tag_info, true);
          }
       };
 
@@ -52,15 +48,10 @@ namespace stat_log
             traits<stat_type>::write(shared_ptr, value);
          }
 
-         static void doStatCommand(void* shared_ptr,
-            StatCmd cmd, boost::any& arg, const TagInfo& tag_info,
-            bool is_substat,
-            const std::vector<std::string>& enumNames,
-            const std::vector<std::string>& dimensionNames,
-            int dimension_idx)
+         static void doStatCommand(void* shared_ptr, StatCmd cmd, boost::any& arg,
+               const TagInfo& tag_info, bool is_substat)
          {
-            traits<stat_type>::doStatCommand(shared_ptr, cmd, arg, tag_info, true,
-                  enumNames, dimensionNames, dimension_idx);
+            traits<stat_type>::doStatCommand(shared_ptr, cmd, arg, tag_info, true);
          }
       };
    }
@@ -91,16 +82,10 @@ namespace stat_log
          write_idx(shared_ptr, idx, args...);
       }
 
-      static void doStatCommand(void* shared_ptr,
-            StatCmd cmd, boost::any& arg, const TagInfo& tag_info,
-            bool is_substat,
-            const std::vector<std::string>& enumNames,
-            const std::vector<std::string>& dimensionNames,
-            int dimension_idx)
+      static void doStatCommand(void* shared_ptr, StatCmd cmd,
+            boost::any& arg, const TagInfo& tag_info, bool is_substat)
       {
          auto& theArray = *reinterpret_cast<SharedType*>(shared_ptr);
-         if(dimension_idx == 0 && !dimensionNames.empty())
-            std::cout << dimensionNames[0] << "\n";
          if(!is_substat)
             printHeader(cmd, tag_info);
          if(printingRequired(cmd))
@@ -116,7 +101,7 @@ namespace stat_log
          for(size_t i = 0; i < Size; ++i)
          {
             stat_array_detail::traits<Repr>::doStatCommand((void*)&theArray[i],
-                  cmd, arg, tag_info, true, enumNames, dimensionNames, dimension_idx+1);
+                  cmd, arg, tag_info, true);
             if(printingRequired(cmd))
             {
                if(i < Size - 1)
@@ -145,14 +130,8 @@ namespace stat_log
          StatArray<N,Repr>::write(child_ptr, args...);
       }
 
-      static void doStatCommand(void* shared_ptr,
-            StatCmd cmd,
-            boost::any& arg,
-            const TagInfo& tag_info,
-            bool is_substat,
-            const std::vector<std::string>& enumNames,
-            const std::vector<std::string>& dimensionNames,
-            int dimension_idx)
+      static void doStatCommand(void* shared_ptr, StatCmd cmd,
+            boost::any& arg, const TagInfo& tag_info, bool is_substat)
       {
          auto& theArray = *reinterpret_cast<SharedType*>(shared_ptr);
          //TODO: handle all commands
@@ -165,18 +144,12 @@ namespace stat_log
             {
                std::cout << "STAT_ARRAY" << std::endl;
             }
-            if(dimension_idx == 0 && dimensionNames.size() == 2)
-            {
-               std::cout << "X = " << dimensionNames[0]
-                  << ", Y = " << dimensionNames[1] << std::endl;
-            }
             std::cout << std::dec << "[";
          }
          for(size_t i = 0; i < Size; ++i)
          {
             auto child_ptr = reinterpret_cast<void*>(&theArray[i]);
-            StatArray<N,Repr>::doStatCommand(child_ptr, cmd, arg, tag_info,
-                  true, enumNames, dimensionNames, dimension_idx+1);
+            StatArray<N,Repr>::doStatCommand(child_ptr, cmd, arg, tag_info, true);
             if(printingRequired(cmd))
             {
                if(i < Size - 1)

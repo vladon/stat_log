@@ -55,10 +55,7 @@ namespace detail
             StatCmd cmd,
             boost::any& arg,
             const TagInfo& tag_info,
-            bool is_substat,
-            const std::vector<std::string>& enumNames,
-            const std::vector<std::string>& dimensionNames,
-            int dimension_idx)
+            bool is_substat)
       {
          if(!is_substat)
             printHeader(cmd, tag_info);
@@ -88,10 +85,7 @@ namespace detail
             StatCmd cmd,
             boost::any& arg,
             const TagInfo& tag_info,
-            bool is_substat,
-            const std::vector<std::string>& enumNames,
-            const std::vector<std::string>& dimensionNames,
-            int dimension_idx)
+            bool is_substat)
       {
          auto ptr = reinterpret_cast<Repr*>(shared_ptr);
          //TODO: handle all commands
@@ -100,10 +94,7 @@ namespace detail
             printHeader(cmd, tag_info);
          if(cmd == StatCmd::DUMP_STAT)
          {
-            if(val >= 0 && static_cast<size_t>(val) < enumNames.size())
-               std::cout << enumNames[val];
-            else
-               std::cout << std::dec << (unsigned long int)val;
+            std::cout << std::dec << (unsigned long int)val;
          }
          else if(cmd == StatCmd::PRINT_STAT_TYPE)
          {
@@ -188,22 +179,8 @@ struct ControlStatProxy : detail::StatProxyBase<StatType, false>
    {
       if(false == isStatisticCommand(cmd))
          return;
-      this->doStatCommand(this->shared_ptr, cmd,
-            cmd_arg, tag_info, false, enumerationNames, dimensionNames, 0);
+      this->doStatCommand(this->shared_ptr, cmd, cmd_arg, tag_info, false);
    }
-
-   //TODO: instead of storing these here, the ControlStatProxy
-   //should provide methods to set the enumerationNames and dimensionNames
-
-   //If the child stat(s) are of enumeration type
-   // they can make use of this index to enumeration
-   // name mapping for viewing purposes.
-   std::vector<std::string> enumerationNames;
-   // std::tuple<std::array<std::string, NumDims>...>;
-
-   //The per-dimension labels.
-   // std::array<std::string, num_stat_dimensions<StatType>::value> dimensionNames;
-   std::vector<std::string> dimensionNames;
 };
 
 }

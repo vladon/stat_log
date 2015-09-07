@@ -209,6 +209,8 @@ void handleCommandLineArgs(int argc, char** argv)
    auto& hwIntfControlStat = getStatSingleton<HwIntfControlStat>();
 
    //Assign a few enumeration and dimension names to make stat-viewing pretty.
+   // TODO: design this better
+#if 0
    hwIntfControlStat.assignEnumerationNames<
       hw_intf::MISC_FPGA_FAULT_TAG>({"OVER_TEMP", "INVALID_COMMAND", "UNKNOWN_FAULT"});
 
@@ -217,6 +219,7 @@ void handleCommandLineArgs(int argc, char** argv)
 
    macSisControlStat.assignDimensionNames<
       sis::MAC_PKTS_DOWN_TAG>({"Priority", "Traffic Type"});
+#endif
 
    macSisControlStat.parseUserCommands(argc, argv);
    hwIntfControlStat.parseUserCommands(argc, argv);

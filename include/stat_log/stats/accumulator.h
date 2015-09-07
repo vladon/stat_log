@@ -165,10 +165,7 @@ namespace detail
             StatCmd cmd,
             boost::any& arg,
             const TagInfo& tag_info,
-            bool is_substat,
-            const std::vector<std::string>& enumNames,
-            const std::vector<std::string>& dimensionNames,
-            int dimension_idx)
+            bool is_substat)
       {
          using namespace boost::fusion;
 

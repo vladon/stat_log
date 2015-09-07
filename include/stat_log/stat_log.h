@@ -33,7 +33,9 @@ struct LogStatOperational :
    detail::LogStatBase<StatTagTree, LogTagTree, true, LogStatOperational>
 {
    using BaseClass = typename
-      detail::LogStatBase<StatTagTree, LogTagTree, true, LogStatOperational>;
+      detail::LogStatBase<StatTagTree, LogTagTree, true,
+         stat_log::LogStatOperational>; //Note the fully qualified name is required
+                                        // due a bug in the clang compiler
    template <typename LogTag>
    LogGenProxy getLog(std::size_t log_idx, int log_level)
    {
@@ -143,7 +145,9 @@ struct LogStatControl :
    detail::LogStatBase<StatTagTree, LogTagTree, false, LogStatControl>
 {
    using BaseClass = typename
-      detail::LogStatBase<StatTagTree, LogTagTree, false, LogStatControl>;
+      detail::LogStatBase<StatTagTree, LogTagTree, false,
+         stat_log::LogStatControl>; //Note the fully qualified name is required
+                                    // due a bug in the clang compiler
    using TopNode = typename BaseClass::TopNode;
    using StatTagHierarchy = typename BaseClass::StatTagHierarchy;
    using LogTagHierarchy = typename BaseClass::LogTagHierarchy;

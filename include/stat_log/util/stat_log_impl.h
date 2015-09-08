@@ -180,10 +180,8 @@ namespace detail
       static const bool value = mpl::is_sequence<typename T::child_list>::value;
    };
 
-   template <typename GlobalTagVec, typename ParentVec,
-             typename ThisTagNode ,typename IsOpType,
-             typename IsStatType
-             >
+   template <typename GlobalTagVec, typename ThisTagNode,
+             typename IsOpType, typename IsStatType>
    struct stat_log_inserter
    {
       //ThisTagNode is of type "struct TagNode"
@@ -204,15 +202,10 @@ namespace detail
       using type = typename mpl::push_front<GlobalTagVec, this_node>::type;
    };
 
-   template <typename GlobalTagVec, typename ParentVec,
-             typename TagHierarchy , typename IsOpType,
-             typename IsStatType
-             >
+   template <typename GlobalTagVec, typename TagHierarchy,
+             typename IsOpType, typename IsStatType>
    struct tag_list_creator_helper
    {
-
-      using ThisLineage = typename mpl::push_front<ParentVec,
-            typename TagHierarchy::tag>::type;
       using ChildTagHierarchy = typename TagHierarchy::child_list;
       using this_node = typename std::conditional_t<
             IsStatType::value,
@@ -235,9 +228,9 @@ namespace detail
             mpl::eval_if<
                is_parent<mpl::_2>,
                tag_list_creator_helper<
-                  mpl::_1, ThisLineage, mpl::_2, IsOpType, IsStatType
+                  mpl::_1, mpl::_2, IsOpType, IsStatType
                >,
-               stat_log_inserter<mpl::_1, ThisLineage, mpl::_2,
+               stat_log_inserter<mpl::_1, mpl::_2,
                   IsOpType, IsStatType
                >
             >
@@ -250,7 +243,6 @@ namespace detail
    {
       using type = typename tag_list_creator_helper<
          mpl::list<>, //Global Tag/Stat list
-         mpl::list<>, //Parent list
          TagHierarchy,
          //Need to wrap the booleans to be nice to the MPL algorithms
          typename std::integral_constant<bool, IsOperational>,

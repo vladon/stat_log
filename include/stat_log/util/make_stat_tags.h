@@ -37,8 +37,7 @@
 //        SL_NAME = "LINK_IND";
 //     };
 //
-//     SL_MAKE_LIST(
-//       children,
+//     using children = SL_MAKE_LIST(
 //       (RxCountTag)
 //       (CorrScoreTag)
 //       (LinkIndTag)
@@ -101,6 +100,8 @@
 #include <boost/preprocessor/control/if.hpp>
 
 #include <boost/fusion/include/cons.hpp>
+#include <boost/fusion/include/as_list.hpp>
+#include <boost/fusion/include/push_back.hpp>
 
 
 //// SL_MAKE_LIST ///////////
@@ -162,3 +163,12 @@
 #define SL_MAKE_TAGS_NAMED_BASE(ListName, Base, args) \
    SL_MAKE_TAGS_BASE(ListName, BOOST_PP_SEQ_TRANSFORM(_MAKE_TUPLE, Base, args))
 //////////////////////////////////////////
+
+
+//// SL_APPEND_TO_TAG_LIST ///////////
+#define SL_APPEND_TO_TAG_LIST(NewListName, OrigListName, elem) \
+   using NewListName = boost::fusion::result_of::as_list<\
+      boost::fusion::result_of::push_back<OrigListName, elem>::type\
+   >::type
+//////////////////////////////////////////
+

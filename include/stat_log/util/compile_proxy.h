@@ -48,7 +48,7 @@ LogGenProxy hexDump(LogLevel ll)
 template <typename Tag, typename ... Args>
 void writeStat(Args... args)
 {
-   stat_log::getStatSingleton<OpStat>().writeStat<Tag>(args...);
+   stat_log::getStatLogSingleton<OpStat>().writeStat<Tag>(args...);
 }
 
 //Explicit template declarations

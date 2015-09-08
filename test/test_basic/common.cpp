@@ -5,7 +5,7 @@ namespace
    template <typename StatType, typename LogType>
    void initializeCommon()
    {
-      auto& stat = stat_log::getStatSingleton<StatType>();
+      auto& stat = stat_log::getStatLogSingleton<StatType>();
       stat.init(STAT_LOG_SHM_NAME);
       auto text_logger = std::make_shared<LogType>(
             STAT_LOG_LOGGER_NAME,

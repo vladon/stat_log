@@ -6,7 +6,7 @@ using namespace stat_log;
 int main(int argc, char** argv)
 {
    initializeStatistics<true == IsOperational>();
-   auto& stat = getStatSingleton<OpStat>();
+   auto& stat = getStatLogSingleton<OpStat>();
 
    stat.writeStat<sis::MAC_PKTS_DOWN_TAG>(88);
    stat.writeStat<hw_intf::MISC_FPGA_FAULT_TAG>(1.0);

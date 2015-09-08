@@ -110,11 +110,12 @@ namespace
    template <typename Tag>
    inline LogGenProxy logCommon(LogLevel ll, int log_idx)
    {
+      constexpr auto is_mac_sis_tag = TagBelongsToLog<Tag, MacSisOpStat>::value;
+      constexpr auto is_hw_intf_tag = TagBelongsToLog<Tag, HwIntfOpStat>::value;
+      static_assert(is_mac_sis_tag || is_hw_intf_tag, "Bad tag in logCommon!\n");
       using TheOpStat = std::conditional_t<
-         TagBelongsToStat<Tag, MacSisOpStat>::value,
-         MacSisOpStat,
-         HwIntfOpStat>;
-      TheOpStat& stat = stat_log::getStatSingleton<TheOpStat>();
+         is_mac_sis_tag, MacSisOpStat, HwIntfOpStat>;
+      TheOpStat& stat = stat_log::getStatLogSingleton<TheOpStat>();
       switch(ll)
       {
          case LogLevel::DEBUG:
@@ -133,8 +134,8 @@ namespace
    template <typename MacSisStatType, typename HwIntfStatType, typename LogType>
    void initializeCommon()
    {
-      auto& macSisStat = stat_log::getStatSingleton<MacSisStatType>();
-      auto& hwIntfStat = stat_log::getStatSingleton<HwIntfStatType>();
+      auto& macSisStat = stat_log::getStatLogSingleton<MacSisStatType>();
+      auto& hwIntfStat = stat_log::getStatLogSingleton<HwIntfStatType>();
 
       macSisStat.init(STAT_LOG_MAC_SIS_SHM_NAME);
       hwIntfStat.init(STAT_LOG_HW_INTF_SHM_NAME);
@@ -174,17 +175,23 @@ namespace stat_log
    template <typename Tag, typename ...Args>
    void writeStat(Args... args)
    {
+      constexpr auto is_mac_sis_tag = TagBelongsToStat<Tag, MacSisOpStat>::value;
+      constexpr auto is_hw_intf_tag = TagBelongsToStat<Tag, HwIntfOpStat>::value;
+      static_assert(is_mac_sis_tag || is_hw_intf_tag, "Bad tag in writeStat!\n");
       using TheOpStat = std::conditional_t<
-         TagBelongsToStat<Tag, MacSisOpStat>::value,
-         MacSisOpStat,
-         HwIntfOpStat>;
-      stat_log::getStatSingleton<TheOpStat>().template writeStat<Tag>(args...);
+         is_mac_sis_tag, MacSisOpStat, HwIntfOpStat>;
+      stat_log::getStatLogSingleton<TheOpStat>().template writeStat<Tag>(args...);
    }
 
    //EXPLICIT TEMPLATE INSTANTIATIONS
    template void writeStat<mac::IP_PKTS_UP_TAG>(int val);
    template void writeStat<sis::MAC_PKTS_DOWN_TAG>(int proto_idx, int prio_idx, int val);
    template void writeStat<hw_intf::MISC_FPGA_FAULT_TAG>(int val);
+
+   template LogGenProxy logger<hw_intf::HW_INTF_LOG>(LogLevel ll);
+   template LogGenProxy hexDumper<hw_intf::HW_INTF_LOG>(LogLevel ll);
+   template LogGenProxy logger<mac::MAC_LOG>(LogLevel ll);
+   template LogGenProxy hexDumper<sis::SIS_LOG>(LogLevel ll);
 //TODO: this will be super annoying for the user to have to define the
 // stat hierarchy AND explicitly instantiate each of them ...
 // Think  of a way to automate this.
@@ -205,8 +212,8 @@ void initializeStatistics<true == IsOperational>()
 
 void handleCommandLineArgs(int argc, char** argv)
 {
-   auto& macSisControlStat = getStatSingleton<MacSisControlStat>();
-   auto& hwIntfControlStat = getStatSingleton<HwIntfControlStat>();
+   auto& macSisControlStat = getStatLogSingleton<MacSisControlStat>();
+   auto& hwIntfControlStat = getStatLogSingleton<HwIntfControlStat>();
 
    //Assign a few enumeration and dimension names to make stat-viewing pretty.
    // TODO: design this better

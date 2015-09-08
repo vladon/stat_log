@@ -236,29 +236,26 @@ struct LogStatControl :
    std::vector<std::shared_ptr<LoggerRetriever>> loggers;
 };
 
-template <typename Stat>
-auto& getStatSingleton()
+template <typename StatLog>
+auto& getStatLogSingleton()
 {
-   static Stat theStat;
-   return theStat;
+   static StatLog theStatLog;
+   return theStatLog;
 }
 
 
-template<typename Tag, typename Stat>
+template<typename Tag, typename StatLog>
 struct TagBelongsToStat
 {
-   using TheStats = typename std::remove_const_t<typename Stat::TheStats>;
-   static_assert(boost::mpl::is_sequence<TheStats>::value,
-         "Stat::TheStats must be a sequence!");
-   using Iter = typename boost::fusion::result_of::find_if<
-         TheStats,
-         detail::matches_tag<Tag>
-      >::type;
-   static constexpr bool value = !std::is_same<
-         Iter,
-         typename boost::fusion::result_of::end<TheStats>::type
-      >::value;
+   static constexpr bool value =
+      detail::TagBelongsTo<Tag, typename StatLog::TheStats>::value;
 };
 
+template<typename Tag, typename StatLog>
+struct TagBelongsToLog
+{
+   static constexpr bool value =
+      detail::TagBelongsTo<Tag, typename StatLog::TheLogs>::value;
+};
 }
 

@@ -408,5 +408,20 @@ namespace detail
    {
       return boost::fusion::filter_view<T, detail::matches_tag<Tag>>(tag_node_list);
    }
+
+   template<typename Tag, typename Sequence>
+   struct TagBelongsTo
+   {
+      static_assert(boost::mpl::is_sequence<Sequence>::value,
+            "TagBelongsTo: Sequence must be a sequence!");
+      using Iter = typename boost::fusion::result_of::find_if<
+            Sequence,
+            detail::matches_tag<Tag>
+         >::type;
+      static constexpr bool value = !std::is_same<
+            Iter,
+            typename boost::fusion::result_of::end<Sequence>::type
+         >::value;
+   };
 }
 }

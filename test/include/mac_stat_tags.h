@@ -20,16 +20,9 @@ struct MAC_STATS
    using children = StatTags;
 };
 
-SL_MAKE_TAGS(
-      LogTags,
-      (Test)
-      (Other)
- );
-
 struct MAC_LOG
 {
    SL_NAME = "MAC";
-   using children = LogTags;
 };
 
 #else

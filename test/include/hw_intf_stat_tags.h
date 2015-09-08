@@ -1,17 +1,29 @@
 #pragma once
 #include <stat_log/util/make_stat_tags.h>
 
-struct HwIntfBase {};
 
-struct HW_INTERFACE
+namespace hw_intf
 {
-   SL_NAME = "HW_INTERFACE";
-   MAKE_STAT_TAGS_NAMED_BASE(
+struct HwIntfBase {};
+SL_MAKE_TAGS_NAMED_BASE(
+      StatTags,
       HwIntfBase,
       (MISC_FPGA_FAULT)
       (BUFFER_OVERFLOW)
-   );
+);
+
+struct HW_INTF_STATS
+{
+   SL_NAME = "HW_INTF";
+   using children = StatTags;
 };
+
+struct HW_INTF_LOG
+{
+   SL_NAME = "HW_INTF";
+};
+}
+
 
 
 

@@ -164,13 +164,14 @@ namespace detail
             void* shared_ptr,
             StatCmd cmd,
             boost::any& arg,
-            const std::vector<std::string>& enumNames,
-            const std::vector<std::string>& dimensionNames,
-            int dimension_idx)
+            const TagInfo& tag_info,
+            bool is_substat)
       {
          using namespace boost::fusion;
 
          auto ptr = reinterpret_cast<char*>(shared_ptr);
+         if(!is_substat)
+            printHeader(cmd, tag_info);
          //TODO: handle all commands
          if(cmd == StatCmd::DUMP_STAT)
          {
@@ -224,6 +225,8 @@ namespace detail
             auto control_word_ptr = reinterpret_cast<control_word*>(ptr);
             *control_word_ptr = 1;
          }
+         if(!is_substat)
+            printHeader(cmd, tag_info);
       }
    };
 

@@ -1,5 +1,6 @@
 #pragma once
 #include <stat_log/parsers/parser_common.h>
+#include <stat_log/util/utils.h>
 #include <boost/any.hpp>
 #include <type_traits>
 #include <vector>
@@ -46,6 +47,29 @@ namespace detail
       using type = StatType;
    };
 
+   struct ControlStatBase
+   {
+      using SharedType = void;
+      static void doStatCommand(
+            void* shared_ptr,
+            StatCmd cmd,
+            boost::any& arg,
+            const TagInfo& tag_info,
+            bool is_substat)
+      {
+         if(!is_substat)
+            printHeader(cmd, tag_info);
+         else if(cmd == StatCmd::PRINT_STAT_TYPE)
+         {
+            detail::indent(tag_info.depth);
+            std::cout << tag_info.name << ", parent" << std::endl;
+         }
+         if(!is_substat)
+            printFooter(cmd);
+      }
+   };
+
+
    template <typename Repr, typename WritePolicy>
    struct SimpleStat
    {
@@ -60,19 +84,17 @@ namespace detail
             void* shared_ptr,
             StatCmd cmd,
             boost::any& arg,
-            const std::vector<std::string>& enumNames,
-            const std::vector<std::string>& dimensionNames,
-            int dimension_idx)
+            const TagInfo& tag_info,
+            bool is_substat)
       {
          auto ptr = reinterpret_cast<Repr*>(shared_ptr);
          //TODO: handle all commands
          auto& val = *ptr;
+         if(!is_substat)
+            printHeader(cmd, tag_info);
          if(cmd == StatCmd::DUMP_STAT)
          {
-            if(val >= 0 && static_cast<size_t>(val) < enumNames.size())
-               std::cout << enumNames[val];
-            else
-               std::cout << std::dec << (unsigned long int)val;
+            std::cout << std::dec << (unsigned long int)val;
          }
          else if(cmd == StatCmd::PRINT_STAT_TYPE)
          {
@@ -82,6 +104,8 @@ namespace detail
          {
             val = 0;
          }
+         if(!is_substat)
+            printFooter(cmd);
       }
    };
 
@@ -151,21 +175,12 @@ struct OperationalStatProxy : detail::StatProxyBase<StatType, true>
 template <typename StatType>
 struct ControlStatProxy : detail::StatProxyBase<StatType, false>
 {
-   void doCommand(StatCmd cmd, boost::any& cmd_arg)
+   void doCommand(StatCmd cmd, boost::any& cmd_arg, const TagInfo& tag_info)
    {
-      this->doStatCommand(this->shared_ptr, cmd, cmd_arg,
-            enumerationNames, dimensionNames, 0);
+      if(false == isStatisticCommand(cmd))
+         return;
+      this->doStatCommand(this->shared_ptr, cmd, cmd_arg, tag_info, false);
    }
-
-   //If the child stat(s) are of enumeration type
-   // they can make use of this index to enumeration
-   // name mapping for viewing purposes.
-   std::vector<std::string> enumerationNames;
-   // std::tuple<std::array<std::string, NumDims>...>;
-
-   //The per-dimension labels.
-   // std::array<std::string, num_stat_dimensions<StatType>::value> dimensionNames;
-   std::vector<std::string> dimensionNames;
 };
 
 }

@@ -20,6 +20,7 @@
 #include <boost/mpl/transform.hpp>
 #include <boost/mpl/fold.hpp>
 #include <boost/mpl/contains.hpp>
+#include <boost/mpl/find_if.hpp>
 
 #include <type_traits>
 #include <string>
@@ -43,14 +44,18 @@ namespace detail
       {
          theProxy.setSharedPtr(ptr);
       }
-
-      void doSerialize()
+      static size_t getSharedSize()
       {
+         return Proxy::getSharedSize();
       }
 
+      auto getLevel(size_t log_idx)
+      {
+         return theProxy.getLevel(log_idx);
+      }
+   private:
       using Proxy = LogOpProxy;
       Proxy theProxy;
-      static constexpr bool IsParent = true;
    };
 
    template <typename TagNode>
@@ -63,19 +68,54 @@ namespace detail
          theProxy.setSharedPtr(ptr);
       }
 
+      static size_t getSharedSize()
+      {
+         return Proxy::getSharedSize();
+      }
+
+      template <typename... Args>
+      void doCommand(Args&&... args)
+      {
+         theProxy.doCommand(std::forward<Args>(args)...);
+      }
+
+   private:
       using Proxy = LogControlProxy;
       Proxy theProxy;
-      static constexpr bool IsParent = true;
    };
    //+++++++++++++++++++++++++++++++++
 
    //++++ STATISTIC CONTAINERS ++++++++++
+
+   //"StatParent" is a basically just a placeholder node
+   // just to tie together the statistic hierarchy.
+   //Stat "parent" nodes -- unlike like log parent nodes --
+   //aren't directly interacted with by either the control
+   //or operational code.
+   template <typename TagNode>
+   struct StatParent
+   {
+      using tag_node = TagNode;
+      using tag = typename tag_node::tag;
+
+      void setSharedPtr(void* ptr) {}
+
+      void doSerialize() {}
+      static size_t getSharedSize() { return 0; }
+
+      template <typename... Args>
+      void doCommand(Args&&... args)
+      {
+         using NullProxy = ControlStatProxy<detail::ControlStatBase>;
+         NullProxy{}.doCommand(std::forward<Args>(args)...);
+      }
+   };
+
    template <typename TagNode>
    struct GenericOpStat
    {
       using tag_node = TagNode;
       using tag = typename tag_node::tag;
-      static constexpr bool IsParent = false;
 
       template <typename... Args>
       void writeVal(Args... args)
@@ -87,13 +127,19 @@ namespace detail
       {
          theProxy.setSharedPtr(ptr);
       }
-      using Proxy = OperationalStatProxy<typename stat_tag_to_type<tag>::type>;
-      Proxy theProxy;
 
       void doSerialize()
       {
          theProxy.serialize();
       }
+
+      static size_t getSharedSize()
+      {
+         return Proxy::getSharedSize();
+      }
+   private:
+      using Proxy = OperationalStatProxy<typename stat_tag_to_type<tag>::type>;
+      Proxy theProxy;
    };
 
 
@@ -102,12 +148,22 @@ namespace detail
    {
       using tag_node = TagNode;
       using tag = typename tag_node::tag;
-      static constexpr bool IsParent = false;
 
       void setSharedPtr(void* ptr)
       {
          theProxy.setSharedPtr(ptr);
       }
+      static size_t getSharedSize()
+      {
+         return Proxy::getSharedSize();
+      }
+      template <typename... Args>
+      void doCommand(Args&&... args)
+      {
+         theProxy.doCommand(std::forward<Args>(args)...);
+      }
+
+   private:
       using Proxy = ControlStatProxy<typename stat_tag_to_type<tag>::type>;
       Proxy theProxy;
    };
@@ -125,38 +181,51 @@ namespace detail
    };
 
    template <typename GlobalTagVec, typename ParentVec,
-             typename ThisStat ,typename IsOpType
+             typename ThisTagNode ,typename IsOpType,
+             typename IsStatType
              >
-   struct stat_inserter
+   struct stat_log_inserter
    {
-      //ThisStat is of type "struct TagNode"
-      using this_stat = typename std::conditional_t<
-         IsOpType::value,
-         GenericOpStat<ThisStat>,
-         GenericControlStat<ThisStat>
-      >;
-
-      //Finally add this statistic to the global tag vec
-      using type = typename mpl::push_front<GlobalTagVec, this_stat>::type;
+      //ThisTagNode is of type "struct TagNode"
+      using this_node = typename std::conditional_t<
+            IsStatType::value,
+            typename std::conditional_t<
+               IsOpType::value,
+               GenericOpStat<ThisTagNode>,
+               GenericControlStat<ThisTagNode>
+            >,
+            typename std::conditional_t<
+               IsOpType::value,
+               GenericOpLogger<ThisTagNode>,
+               GenericControlLogger<ThisTagNode>
+            >
+         >;
+      //Finally add this stat (or log) to the global tag vec
+      using type = typename mpl::push_front<GlobalTagVec, this_node>::type;
    };
 
    template <typename GlobalTagVec, typename ParentVec,
-             typename TagHierarchy , typename IsOpType
+             typename TagHierarchy , typename IsOpType,
+             typename IsStatType
              >
-   struct stat_creator_helper
+   struct tag_list_creator_helper
    {
 
       using ThisLineage = typename mpl::push_front<ParentVec,
             typename TagHierarchy::tag>::type;
       using ChildTagHierarchy = typename TagHierarchy::child_list;
-      using this_logger = typename std::conditional_t<
-            IsOpType::value,
-            GenericOpLogger<TagHierarchy>,
-            GenericControlLogger<TagHierarchy>
+      using this_node = typename std::conditional_t<
+            IsStatType::value,
+            StatParent<TagHierarchy>,
+            typename std::conditional_t<
+               IsOpType::value,
+               GenericOpLogger<TagHierarchy>,
+               GenericControlLogger<TagHierarchy>
+            >
          >;
 
       using UpdatedGlobalTagVec = typename mpl::push_front<
-         GlobalTagVec, this_logger>::type;
+         GlobalTagVec, this_node>::type;
 
       // _1 == UpdatedGlobalTagVec
       // _2 == the iterator to the child TagNode
@@ -165,24 +234,27 @@ namespace detail
             UpdatedGlobalTagVec,
             mpl::eval_if<
                is_parent<mpl::_2>,
-               stat_creator_helper<
-                  mpl::_1, ThisLineage, mpl::_2, IsOpType
+               tag_list_creator_helper<
+                  mpl::_1, ThisLineage, mpl::_2, IsOpType, IsStatType
                >,
-               stat_inserter<mpl::_1, ThisLineage, mpl::_2, IsOpType
+               stat_log_inserter<mpl::_1, ThisLineage, mpl::_2,
+                  IsOpType, IsStatType
                >
             >
          >::type;
    };
 
-   template <typename TagHierarchy, bool IsOperational>
-   struct stat_creator
+   template <typename TagHierarchy,
+            bool IsOperational, bool IsStatistic>
+   struct tag_list_creator
    {
-      using type = typename stat_creator_helper<
+      using type = typename tag_list_creator_helper<
          mpl::list<>, //Global Tag/Stat list
          mpl::list<>, //Parent list
          TagHierarchy,
-         //Need to wrap the boolean to be nice to the MPL algorithms
-         typename std::integral_constant<bool, IsOperational>
+         //Need to wrap the booleans to be nice to the MPL algorithms
+         typename std::integral_constant<bool, IsOperational>,
+         typename std::integral_constant<bool, IsStatistic>
          >::type;
    };
 
@@ -198,10 +270,10 @@ namespace detail
              class... StatTagArgs>
    struct tag_node_query
    {
-      template<typename T>
+      template<typename TagNode>
       struct apply
       {
-         using stat_tag = typename T::tag;
+         using stat_tag = typename TagNode::tag;
          using type = std::integral_constant
             <
                bool,
@@ -213,8 +285,23 @@ namespace detail
       };
    };
 
-   template <typename Tag>  using matches_tag
+   template <typename Tag> using matches_tag
       = tag_node_query<std::is_same, Identity, Tag>;
+
+   template <typename TheList, typename QueryMetaFunc>
+   struct is_found_in_list
+   {
+     static constexpr bool value =
+     !std::is_same
+        <
+           typename boost::mpl::end<TheList>::type,
+           typename boost::mpl::find_if
+           <
+              TheList,
+              QueryMetaFunc
+           >::type
+        >::value;
+   };
 
    template <typename T, typename P, int Depth, typename C = void>
    struct TagNode
@@ -234,49 +321,65 @@ namespace detail
 
    template <typename T, typename Parent, typename Depth>
    struct GenTagHierarchy<T, Parent, Depth,
-      typename AlwaysVoid<typename T::ChildTypes>::type>
+      typename AlwaysVoid<typename T::children>::type>
    {
-      using ChildTypes = typename T::ChildTypes;
+      using children = typename T::children;
       using ChildDepth = std::integral_constant<int, Depth::value + 1>;
       using child_type_vec = typename boost::mpl::transform<
-         ChildTypes, GenTagHierarchy<boost::mpl::_, T, ChildDepth>>::type;
+         children, GenTagHierarchy<boost::mpl::_, T, ChildDepth>>::type;
       using type = TagNode<T, Parent, Depth::value, child_type_vec>;
    };
 
-   template <typename UserStatDefs, bool IsOperational, typename Derived>
+   template <typename StatTagTree, typename LogTagTree,
+             bool IsOperational, template<typename...> class Derived>
    struct LogStatBase
    {
+      using TheDerived = Derived<StatTagTree, LogTagTree>;
       struct TopName
       {
          SL_NAME = "";
       };
       using TopNode = detail::TagNode<TopName, void, 0>;
 
-      using TagHierarchy = typename detail::GenTagHierarchy<UserStatDefs, TopNode,
+      using StatTagHierarchy = typename detail::GenTagHierarchy<StatTagTree, TopNode,
             std::integral_constant<int, 0> >::type;
-      using TheStats = typename boost::fusion::result_of::as_list<
-         typename detail::stat_creator<TagHierarchy, IsOperational>::type>::type;
+      using LogTagHierarchy = typename detail::GenTagHierarchy<LogTagTree, TopNode,
+            std::integral_constant<int, 0> >::type;
 
-      //Creates a single shared memory block that will store:
-      //  -- The serialization for each stat.
-      //  -- The control block for each stat (this will be
-      //     used to signal per-stat behavior -- e.g., clear
-      //     disable, etc.).
-      //  -- The control block for each parent (this will be
-      //     used to set the log level for both the normal logging
-      //     AND the hex dumps).
-      //1. Control Block
-      //2. Stat Block
+      using TheStats = typename boost::fusion::result_of::as_list
+      <
+         typename detail::tag_list_creator
+         <
+            StatTagHierarchy,
+            IsOperational,
+            true
+         >::type
+      >::type;
+
+      using TheLogs = typename boost::fusion::result_of::as_list
+      <
+         typename detail::tag_list_creator
+         <
+            LogTagHierarchy,
+            IsOperational,
+            false
+         >::type
+      >::type;
+
       void init(const std::string& shm_name)
       {
          size_t total_shm_size = 0;
          using namespace boost::fusion;
-         for_each(theStats, [&total_shm_size](auto& stat)
+
+         auto get_shm_size_lambda = [&total_shm_size](auto& node)
          {
-            using StatType = std::remove_reference_t<decltype(stat)>;
-            total_shm_size += StatType::Proxy::getSharedSize();
-         });
+            using NodeType = std::remove_reference_t<decltype(node)>;
+            total_shm_size += NodeType::getSharedSize();
+         };
+         for_each(theStats, get_shm_size_lambda);
+         for_each(theLogs, get_shm_size_lambda);
          shm_backend.setParams(shm_name, total_shm_size, IsOperational);
+
          auto shm_start = shm_backend.getMemoryPtr();
 #if 0
          std::cout << std::dec <<  "SHM size = " << total_shm_size
@@ -286,29 +389,32 @@ namespace detail
 
          //Next, need to inform each node theStats about its location
          // in shared memory
-         for_each(theStats, [&shm_ptr](auto& stat)
+         auto set_shm_pointers = [&shm_ptr](auto& node)
          {
-            using StatType = std::remove_reference_t<decltype(stat)>;
-            stat.setSharedPtr(shm_ptr);
-            shm_ptr += StatType::Proxy::getSharedSize();
-         });
+            using NodeType = std::remove_reference_t<decltype(node)>;
+            node.setSharedPtr(shm_ptr);
+            shm_ptr += NodeType::getSharedSize();
+         };
+         for_each(theStats, set_shm_pointers);
+         for_each(theLogs, set_shm_pointers);
 
-         static_cast<Derived*>(this)->doInit();
+         static_cast<TheDerived*>(this)->doInit();
       }
 
       void stop()
       {
-         static_cast<Derived*>(this)->doStop();
+         static_cast<TheDerived*>(this)->doStop();
       }
 
       TheStats theStats;
+      TheLogs theLogs;
       shared_mem_backend shm_backend;
    };
 
    template<typename Tag, typename T>
-   auto getStatHandleView(T& stats)
+   auto getView(T& tag_node_list)
    {
-      return boost::fusion::filter_view<T, detail::matches_tag<Tag>>(stats);
+      return boost::fusion::filter_view<T, detail::matches_tag<Tag>>(tag_node_list);
    }
 }
 }

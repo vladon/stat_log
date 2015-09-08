@@ -32,11 +32,11 @@
 #define STAT_LOG_HEXDUMP_LOGGER_SIZE_BYTES 4194304
 
 
-using MacSisOpStat = stat_log::LogStatOperational<TOP_MAC_SIS>;
-using MacSisControlStat = stat_log::LogStatControl<TOP_MAC_SIS>;
+using MacSisOpStat = stat_log::LogStatOperational<MAC_SIS_STATS, MAC_SIS_LOG>;
+using MacSisControlStat = stat_log::LogStatControl<MAC_SIS_STATS, MAC_SIS_LOG>;
 
-using HwIntfOpStat = stat_log::LogStatOperational<HW_INTERFACE>;
-using HwIntfControlStat = stat_log::LogStatControl<HW_INTERFACE>;
+using HwIntfOpStat = stat_log::LogStatOperational<hw_intf::HW_INTF_STATS, hw_intf::HW_INTF_LOG>;
+using HwIntfControlStat = stat_log::LogStatControl<hw_intf::HW_INTF_STATS, hw_intf::HW_INTF_LOG>;
 
 using LogGen = stat_log::shared_mem_logger_generator;
 using LogRet = stat_log::shared_mem_logger_retriever;
@@ -54,7 +54,7 @@ namespace stat_log
    };
 
    template <>
-   struct stat_tag_to_type<SIS::MAC_PKTS_DOWN_TAG>
+   struct stat_tag_to_type<sis::MAC_PKTS_DOWN_TAG>
    {
       using ChildStat = int;
       using type = StatArray<4, StatArray<6, ChildStat>>;
@@ -64,7 +64,7 @@ namespace stat_log
    template <typename Tag>
    struct stat_tag_to_type<Tag,
                std::enable_if_t<
-                 std::is_base_of<HwIntfBase, Tag>::value
+                 std::is_base_of<hw_intf::HwIntfBase, Tag>::value
                >
             >
    {
@@ -94,7 +94,7 @@ namespace stat_log
 
    //Complete specialization for the HW FAULT
    template <>
-   struct stat_tag_to_type<HW_INTERFACE::MISC_FPGA_FAULT_TAG>
+   struct stat_tag_to_type<hw_intf::MISC_FPGA_FAULT_TAG>
    {
       using type = Accumulator<TheAccum>;
    };
@@ -182,9 +182,9 @@ namespace stat_log
    }
 
    //EXPLICIT TEMPLATE INSTANTIATIONS
-   template void writeStat<MAC::IP_PKTS_UP_TAG>(int val);
-   template void writeStat<SIS::MAC_PKTS_DOWN_TAG>(int proto_idx, int prio_idx, int val);
-   template void writeStat<HW_INTERFACE::MISC_FPGA_FAULT_TAG>(int val);
+   template void writeStat<mac::IP_PKTS_UP_TAG>(int val);
+   template void writeStat<sis::MAC_PKTS_DOWN_TAG>(int proto_idx, int prio_idx, int val);
+   template void writeStat<hw_intf::MISC_FPGA_FAULT_TAG>(int val);
 //TODO: this will be super annoying for the user to have to define the
 // stat hierarchy AND explicitly instantiate each of them ...
 // Think  of a way to automate this.
@@ -209,14 +209,17 @@ void handleCommandLineArgs(int argc, char** argv)
    auto& hwIntfControlStat = getStatSingleton<HwIntfControlStat>();
 
    //Assign a few enumeration and dimension names to make stat-viewing pretty.
+   // TODO: design this better
+#if 0
    hwIntfControlStat.assignEnumerationNames<
-      HW_INTERFACE::MISC_FPGA_FAULT_TAG>({"OVER_TEMP", "INVALID_COMMAND", "UNKNOWN_FAULT"});
+      hw_intf::MISC_FPGA_FAULT_TAG>({"OVER_TEMP", "INVALID_COMMAND", "UNKNOWN_FAULT"});
 
    macSisControlStat.assignEnumerationNames<
-      SIS::MAC_PKTS_DOWN_TAG>({"L", "M", "H"});
+      sis::MAC_PKTS_DOWN_TAG>({"L", "M", "H"});
 
    macSisControlStat.assignDimensionNames<
-      SIS::MAC_PKTS_DOWN_TAG>({"Priority", "Traffic Type"});
+      sis::MAC_PKTS_DOWN_TAG>({"Priority", "Traffic Type"});
+#endif
 
    macSisControlStat.parseUserCommands(argc, argv);
    hwIntfControlStat.parseUserCommands(argc, argv);

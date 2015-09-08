@@ -1,7 +1,7 @@
 #pragma once
 #include <stat_log/defs.h>
 
-//MAKE_STAT_TAGS is a convenience wrapper for creating statistics.
+//SL_MAKE_TAGS is a convenience wrapper for creating tags.
 //For example:
 //
 //     struct RxCountTag{
@@ -14,14 +14,15 @@
 //        SL_NAME = "LINK_IND";
 //     };
 //
-//     using ChildTypes = MAKE_STAT_LIST(
+//     using children = SL_MAKE_LIST(
+//       children
 //       (RxCountTag)
 //       (CorrScoreTag)
 //       (LinkIndTag)
 //       );
 //
 //Can be replaced by a single line:
-//     MAKE_STAT_TAGS( (RxCount) (CorrScore) (LinkInd))
+//     SL_MAKE_TAGS( (RxCount) (CorrScore) (LinkInd))
 //
 //++++++++++++++++++++++++++++++++++++++++++
 //Or
@@ -36,14 +37,19 @@
 //        SL_NAME = "LINK_IND";
 //     };
 //
-//     using ChildTypes = MAKE_STAT_LIST(
+//     SL_MAKE_LIST(
+//       children,
 //       (RxCountTag)
 //       (CorrScoreTag)
 //       (LinkIndTag)
 //       );
 //
 //Can be replaced by
-//     MAKE_STAT_TAGS_BASE( ((RxCount, Base1)) ((CorrScore, Base2)) ((LinkIndTag, Base3)))
+//     using ChildTypes = SL_MAKE_TAGS_BASE(
+//         children,
+//         ((RxCount, Base1))
+//         ((CorrScore, Base2))
+//         ((LinkIndTag, Base3)))
 //
 //++++++++++++++++++++++++++++++++++++++++++
 //Or
@@ -58,19 +64,24 @@
 //        SL_NAME = "LINK_IND";
 //     };
 //
-//     using ChildTypes = MAKE_STAT_LIST(
+//     using children = SL_MAKE_LIST(
 //       (RxCountTag)
 //       (CorrScoreTag)
 //       (LinkIndTag)
 //       );
 //
 // Can be replaced by:
-//     MAKE_STAT_TAGS_NAMED_BASE( Base, (RxCount) (CorrScore) (LinkInd))
+//     SL_MAKE_TAGS_NAMED_BASE(
+//        children
+//        Base,
+//        (RxCount)
+//        (CorrScore)
+//        (LinkInd));
 //
 //
 //TODO: it would be really cool if we can define stat hierarchies in this
 // way. i.e.
-//    MAKE_STAT_TAGS( (Level1Stats (RxCount) (CorrScore) (LinkInd))
+//    SL_MAKE_TAGS( (Level1Stats (RxCount) (CorrScore) (LinkInd))
 //                    (Level2Stats (IpDown) (IpUp))
 //                   )
 //
@@ -92,63 +103,62 @@
 #include <boost/fusion/include/cons.hpp>
 
 
-//// MAKE_STAT_LIST ///////////
+//// SL_MAKE_LIST ///////////
 #define _CONS_SEP_START(r, token, i, e) token e BOOST_PP_COMMA()
 #define _CONS_START(token, sequence) BOOST_PP_SEQ_FOR_EACH_I(_CONS_SEP_START, token, sequence)
 
 #define _CONS_SEP_END(r, token, i, e) BOOST_PP_IF(i,, boost::fusion::nil) token
 #define _CONS_END(token, sequence) BOOST_PP_SEQ_FOR_EACH_I(_CONS_SEP_END, token, sequence)
 
-#define MAKE_STAT_LIST(seq) \
+#define SL_MAKE_LIST(seq) \
    _CONS_START(boost::fusion::cons<, seq) \
    _CONS_END(>, seq)
 //////////////////////////////////////////
 
 
-//// MAKE_STAT_TAGS ///////////
-#define _MAKE_STAT_TAG(r, data, elem) BOOST_PP_CAT(elem,data)
+//// SL_MAKE_TAGS ///////////
+#define _SL_MAKE_TAG(r, data, elem) BOOST_PP_CAT(elem,data)
 
-#define _MAKE_STAT_TAG_STRUCT(r, data, elem) \
-   struct _MAKE_STAT_TAG(r, data, elem) { \
+#define _SL_MAKE_TAG_STRUCT(r, data, elem) \
+   struct _SL_MAKE_TAG(r, data, elem) { \
       SL_NAME = BOOST_PP_STRINGIZE(elem); \
    };
 
-#define MAKE_STAT_TAG_STRUCT(stat_name) \
-   _MAKE_STAT_TAG_STRUCT(~, _TAG, stat_name)
+#define SL_MAKE_TAG_STRUCT(stat_name) \
+   _SL_MAKE_TAG_STRUCT(~, _TAG, stat_name)
 
-#define MAKE_STAT_TAGS(args) \
-   BOOST_PP_SEQ_FOR_EACH (_MAKE_STAT_TAG_STRUCT, _TAG, args) \
-   using ChildTypes = MAKE_STAT_LIST(\
-      BOOST_PP_SEQ_TRANSFORM(_MAKE_STAT_TAG, _TAG, args));
+#define SL_MAKE_TAGS(ListName, args) \
+   BOOST_PP_SEQ_FOR_EACH (_SL_MAKE_TAG_STRUCT, _TAG, args) \
+   using ListName = SL_MAKE_LIST(\
+         BOOST_PP_SEQ_TRANSFORM(_SL_MAKE_TAG, _TAG, args));
 //////////////////////////////////////////
 
 
 
-//// MAKE_STAT_TAGS_BASE ///////////
+//// SL_MAKE_TAGS_BASE ///////////
 
-#define _MAKE_STAT_TAG_STRUCT_BASE(r, data, elem) \
-   struct _MAKE_STAT_TAG(r, data, BOOST_PP_TUPLE_ELEM(2,0, elem)) : BOOST_PP_TUPLE_ELEM(2,1,elem) { \
+#define _SL_MAKE_TAG_STRUCT_BASE(r, data, elem) \
+   struct _SL_MAKE_TAG(r, data, BOOST_PP_TUPLE_ELEM(2,0, elem)) : BOOST_PP_TUPLE_ELEM(2,1,elem) { \
       SL_NAME = BOOST_PP_STRINGIZE(BOOST_PP_TUPLE_ELEM(2,0, elem)); \
    };
 
-#define MAKE_STAT_TAG_STRUCT_BASE(stat_name, base) \
-   _MAKE_STAT_TAG_STRUCT_BASE(~, _TAG, (stat_name, base))
+#define SL_MAKE_TAG_STRUCT_BASE(stat_name, base) \
+   _SL_MAKE_TAG_STRUCT_BASE(~, _TAG, (stat_name, base))
 
 
-#define _MAKE_STAT_TAG_BASE(r, data, elem) BOOST_PP_CAT(BOOST_PP_TUPLE_ELEM(2,0,elem),data)
+#define _SL_MAKE_TAG_BASE(r, data, elem) BOOST_PP_CAT(BOOST_PP_TUPLE_ELEM(2,0,elem),data)
 
-#define MAKE_STAT_TAGS_BASE(args) \
-   BOOST_PP_SEQ_FOR_EACH (_MAKE_STAT_TAG_STRUCT_BASE, _TAG, args) \
-   using ChildTypes = MAKE_STAT_LIST(\
-      BOOST_PP_SEQ_TRANSFORM(_MAKE_STAT_TAG_BASE, _TAG, args));
+#define SL_MAKE_TAGS_BASE(ListName, args) \
+   BOOST_PP_SEQ_FOR_EACH (_SL_MAKE_TAG_STRUCT_BASE, _TAG, args) \
+   using ListName = SL_MAKE_LIST(\
+         BOOST_PP_SEQ_TRANSFORM(_SL_MAKE_TAG_BASE, _TAG, args));
 //////////////////////////////////////////
 
 
 
-
-//// MAKE_STAT_TAGS_NAMED_BASE ///////////
+//// SL_MAKE_TAGS_NAMED_BASE ///////////
 #define _MAKE_TUPLE(r, data, elem) (elem, data)
 
-#define MAKE_STAT_TAGS_NAMED_BASE(Base, args) \
-   MAKE_STAT_TAGS_BASE(BOOST_PP_SEQ_TRANSFORM(_MAKE_TUPLE, Base, args))
+#define SL_MAKE_TAGS_NAMED_BASE(ListName, Base, args) \
+   SL_MAKE_TAGS_BASE(ListName, BOOST_PP_SEQ_TRANSFORM(_MAKE_TUPLE, Base, args))
 //////////////////////////////////////////

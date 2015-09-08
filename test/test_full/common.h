@@ -6,13 +6,23 @@
  * MAC/SiS layers
  *********************************/
 
-struct TOP_MAC_SIS
+struct MAC_SIS_STATS
 {
-   SL_NAME = "TOP_LEVEL";
-   using ChildTypes = MAKE_STAT_LIST
+   SL_NAME = "MAC_SIS";
+   using children = SL_MAKE_LIST
    (
-      (MAC)
-      (SIS)
+      (mac::MAC_STATS)
+      (sis::SIS_STATS)
+   );
+};
+
+struct MAC_SIS_LOG
+{
+   SL_NAME = "MAC_SIS";
+   using children = SL_MAKE_LIST
+   (
+      (mac::MAC_LOG)
+      (sis::SIS_LOG)
    );
 };
 

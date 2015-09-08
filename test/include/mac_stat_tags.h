@@ -1,20 +1,36 @@
 #pragma once
 #include <stat_log/util/make_stat_tags.h>
 
+namespace mac
+{
 struct MacBase {};
 
+SL_MAKE_TAGS_NAMED_BASE(
+      StatTags,
+      MacBase,
+   (IP_PKTS_DOWN)
+   (IP_PKTS_UP)
+   (BUFFER_OVERFLOW)
+);
+
 #if 1
-struct MAC
+struct MAC_STATS
 {
    SL_NAME = "MAC";
-   MAKE_STAT_TAGS_NAMED_BASE(
-         MacBase,
-      (IP_PKTS_DOWN)
-      (IP_PKTS_UP)
-      (BUFFER_OVERFLOW)
-   );
+   using children = StatTags;
 };
 
+SL_MAKE_TAGS(
+      LogTags,
+      (Test)
+      (Other)
+ );
+
+struct MAC_LOG
+{
+   SL_NAME = "MAC";
+   using children = LogTags;
+};
 
 #else
 //Added a bunch more stats just to get a feel for the scalability of this library
@@ -80,3 +96,4 @@ struct MAC
 };
 
 #endif
+}

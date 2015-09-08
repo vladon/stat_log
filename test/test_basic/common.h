@@ -17,21 +17,31 @@
  * Statistic definitions
  *********************************/
 
-struct TOP
+struct TOP_STATS
 {
-   SL_NAME = "TOP_LEVEL";
-   using ChildTypes = MAKE_STAT_LIST
+   SL_NAME = "";
+   using children = SL_MAKE_LIST
    (
-      (MAC)
-      (SIS)
-      (HW_INTERFACE)
+      (mac::MAC_STATS)
+      (sis::SIS_STATS)
+      (hw_intf::HW_INTF_STATS)
+   );
+};
+struct TOP_LOG
+{
+   SL_NAME = "";
+   using children = SL_MAKE_LIST
+   (
+      (mac::MAC_LOG)
+      (sis::SIS_LOG)
+      (hw_intf::HW_INTF_LOG)
    );
 };
 
 constexpr bool IsOperational = true;
 
-using OpStat       = stat_log::LogStatOperational<TOP>;
-using ControlStat  = stat_log::LogStatControl<TOP>;
+using OpStat       = stat_log::LogStatOperational<TOP_STATS, TOP_LOG>;
+using ControlStat  = stat_log::LogStatControl<TOP_STATS, TOP_LOG>;
 using LoggerGenerator = stat_log::shared_mem_logger_generator;
 using LoggerRetriever = stat_log::shared_mem_logger_retriever;
 /*********************************/

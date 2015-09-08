@@ -15,6 +15,7 @@
 #include <vector>
 #include <stdexcept>
 #include <cstdlib>
+#include <typeindex>
 #include <assert.h>
 
 namespace stat_log
@@ -32,6 +33,7 @@ enum class StatCmd
 struct TagInfo
 {
    const char* const name;
+   std::type_index tag_index;
    std::size_t depth;
    bool is_stat_tag;
 };

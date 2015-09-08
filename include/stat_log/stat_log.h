@@ -176,7 +176,12 @@ struct LogStatControl :
    >
    sendCommand(StatCmd cmd, boost::any& cmd_arg)
    {
-      TagInfo tag_info{StatTagNode::name, StatTagNode::depth, true};
+      using Tag = typename StatTagNode::tag;
+      TagInfo tag_info{
+         StatTagNode::name,
+         std::type_index(typeid(Tag)),
+         StatTagNode::depth,
+         true};
       detail::getHandle<typename StatTagNode::tag>(this->theStats)
          .doCommand(cmd, cmd_arg, tag_info);
    }
@@ -191,8 +196,13 @@ struct LogStatControl :
    >
    sendCommand(StatCmd cmd, boost::any& cmd_arg)
    {
-      TagInfo tag_info{LogTagNode::name, LogTagNode::depth, false};
-      detail::getHandle<typename LogTagNode::tag>(this->theLogs)
+      using Tag = typename LogTagNode::tag;
+      TagInfo tag_info{
+         LogTagNode::name,
+         std::type_index(typeid(Tag)),
+         LogTagNode::depth,
+         false};
+      detail::getHandle<Tag>(this->theLogs)
          .doCommand(cmd, cmd_arg, tag_info);
    }
 

@@ -57,15 +57,11 @@ namespace detail
             const TagInfo& tag_info,
             bool is_substat)
       {
-         if(!is_substat)
-            printHeader(cmd, tag_info);
-         else if(cmd == StatCmd::PRINT_STAT_TYPE)
+         if(printingRequired(cmd))
          {
-            detail::indent(tag_info.depth);
-            std::cout << tag_info.name << ", parent" << std::endl;
+            cmd = StatCmd::PRINT_TAG;
+            printHeader(cmd, tag_info);
          }
-         if(!is_substat)
-            printFooter(cmd);
       }
    };
 
@@ -179,7 +175,10 @@ struct ControlStatProxy : detail::StatProxyBase<StatType, false>
    {
       if(false == isStatisticCommand(cmd))
          return;
-      this->doStatCommand(this->shared_ptr, cmd, cmd_arg, tag_info, false);
+      if(cmd == StatCmd::PRINT_TAG)
+         printHeader(cmd, tag_info);
+      else
+         this->doStatCommand(this->shared_ptr, cmd, cmd_arg, tag_info, false);
    }
 };
 

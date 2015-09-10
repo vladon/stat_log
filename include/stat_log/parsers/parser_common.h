@@ -28,6 +28,7 @@ enum class StatCmd
    CLEAR_STAT,
    DUMP_TIMESERIES,
    LOG_LEVEL,
+   PRINT_TAG,
 };
 
 struct TagInfo
@@ -46,6 +47,7 @@ inline bool printingRequired(StatCmd cmd)
       case StatCmd::PRINT_STAT_TYPE:
       case StatCmd::DUMP_STAT:
       case StatCmd::LOG_LEVEL:
+      case StatCmd::PRINT_TAG:
          return true;
       default:
          return false;
@@ -65,6 +67,7 @@ inline bool isStatisticCommand(StatCmd cmd)
       case StatCmd::DUMP_STAT:
       case StatCmd::CLEAR_STAT:
       case StatCmd::DUMP_TIMESERIES:
+      case StatCmd::PRINT_TAG:
          return true;
       default:
          return false;
@@ -76,6 +79,7 @@ inline bool isLogCommand(StatCmd cmd)
    switch(cmd)
    {
       case StatCmd::LOG_LEVEL:
+      case StatCmd::PRINT_TAG:
          return true;
       default:
          return false;
@@ -123,12 +127,19 @@ void processCommandsCommon(StatLogControl& stat_log_control, const std::string& 
    setStartingDepth(TagNode::depth);
    cmd = StatCmd::NO_CMD;
 
+   if(vm["show-tags"].as<bool>())
+   {
+      std::cout << TagNode::name << std::endl;
+      cmd = StatCmd::PRINT_TAG;
+   }
    if(vm["stat-types"].as<bool>())
    {
+      std::cout << TagNode::name << std::endl;
       cmd = StatCmd::PRINT_STAT_TYPE;
    }
    else if(vm["dump-stats"].as<bool>())
    {
+      std::cout << TagNode::name << std::endl;
       cmd = StatCmd::DUMP_STAT;
    }
    else if(vm["clear-stats"].as<bool>())
@@ -139,6 +150,7 @@ void processCommandsCommon(StatLogControl& stat_log_control, const std::string& 
    {
       //Args: <LoggerIdx> [<LogLevel>]
       //No LogLevel arg will print the current log level
+      std::cout << TagNode::name << std::endl;
       auto arg_vec = vm["log-level"].as<std::vector<std::string>>();
       int logger_idx = 0;
       if(arg_vec.size() > 0)

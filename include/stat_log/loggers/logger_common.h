@@ -72,7 +72,7 @@ namespace stat_log
                auto& log_level_idx = (*shared_ptr)[log_idx];
                if(logLevelCmd.set_log_level)
                {
-                  std::cout << "PREV_LOG_LEVEL = " << LogLevelNames[log_level_idx] << ", ";
+                  std::cout << "previous log level = " << LogLevelNames[log_level_idx] << ", ";
                   auto it = std::find(LogLevelNames.begin(), LogLevelNames.end(),
                         logLevelCmd.new_log_level);
                   if(it != LogLevelNames.end())
@@ -84,7 +84,7 @@ namespace stat_log
                      std::cerr << "Invalid log level: " << logLevelCmd.new_log_level << std::endl;
                   }
                }
-               std::cout << "LOG LEVEL = " << LogLevelNames[log_level_idx] << std::endl;
+               std::cout << "new log level = " << LogLevelNames[log_level_idx];
             }
             printFooter(cmd);
          }

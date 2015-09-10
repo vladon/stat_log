@@ -76,9 +76,9 @@ namespace stat_log
 #if 1
    using TheAccum = stat_log::HistogramCount<
       double,
-      0, //start bin
+      1, //start bin
       10,//stop bin
-      10 //num bins
+      9 //num bins
          >;
 #else
    using TheAccum = ba::accumulator_set<

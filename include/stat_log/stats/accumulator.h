@@ -201,8 +201,11 @@ namespace detail
             for_each(feature_handlers{}, [&](auto feature_handler)
             {
                using FeatureHandlerType = decltype(feature_handler);
-               std::cout.width(max_pad);
-               std::cout.precision(max_width);
+               if(num_fields > 1)
+               {
+                  std::cout.width(max_pad);
+                  std::cout.precision(max_width);
+               }
                FeatureHandlerType::dumpStat(ptr);
                ptr += FeatureHandlerType::size();
             });
@@ -226,7 +229,7 @@ namespace detail
             *control_word_ptr = 1;
          }
          if(!is_substat)
-            printHeader(cmd, tag_info);
+            printFooter(cmd);
       }
    };
 

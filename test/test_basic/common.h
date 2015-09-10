@@ -19,7 +19,7 @@
 
 struct TOP_STATS
 {
-   SL_NAME = "";
+   SL_NAME = "TOP";
    using children = SL_MAKE_LIST
    (
       (mac::MAC_STATS)
@@ -29,7 +29,7 @@ struct TOP_STATS
 };
 struct TOP_LOG
 {
-   SL_NAME = "";
+   SL_NAME = "TOP_LOG";
    using children = SL_MAKE_LIST
    (
       (mac::MAC_LOG)

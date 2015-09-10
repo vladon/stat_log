@@ -67,7 +67,7 @@ void parse(StatLogControl& stat_log_control, std::string& component_name, std::s
    }
 
    auto child_component_name = component_name;
-   auto component_head_tail = getHeadTail(component_name,'-');
+   auto component_head_tail = getHeadTail(component_name,'.');
    auto& head_c = std::get<0>(component_head_tail);
    auto& tail_c = std::get<1>(component_head_tail);
 

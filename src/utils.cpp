@@ -27,6 +27,9 @@ namespace detail
          ("component", po::value<std::string>()->default_value(""),
           "TODO")
 
+         ("show-tags", po::bool_switch()->default_value(false),
+          "Show the tag hierarchy.")
+
          ("dump-stats", po::bool_switch()->default_value(false),
           "Dump all statistics")
 
@@ -131,14 +134,17 @@ void printHeader(StatCmd cmd, const TagInfo& tag_info)
    {
       detail::indent(tag_info.depth - starting_tag_depth);
       std::cout << tag_info.name << std::endl;
-      detail::indent(tag_info.depth - starting_tag_depth);
-      std::cout << "  ";
+      if(cmd != StatCmd::PRINT_TAG)
+      {
+         detail::indent(tag_info.depth - starting_tag_depth);
+         std::cout << "  ";
+      }
    }
 }
 
 void printFooter(StatCmd cmd)
 {
-   if(printingRequired(cmd))
+   if(printingRequired(cmd) && cmd != StatCmd::PRINT_TAG)
    {
       std::cout << std::endl;
    }

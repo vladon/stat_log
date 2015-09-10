@@ -99,8 +99,8 @@ namespace stat_log
             for(std::size_t i = 0; i < hist_ptr->size(); ++i)
             {
                const auto& tup = (*hist_ptr)[i];
-               std::cout << "\nBin start = " << std::get<0>(tup)
-                  << ", Count = " << std::get<1>(tup);
+               std::cout << "Bin start = " << std::get<0>(tup)
+                  << ", Count = " << std::get<1>(tup) << std::endl;
             }
          }
       };

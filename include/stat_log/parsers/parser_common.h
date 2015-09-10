@@ -1,5 +1,6 @@
 #pragma once
 #include <stat_log/util/utils.h>
+#include <stat_log/defs.h>
 #include <boost/program_options.hpp>
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/parsers.hpp>
@@ -39,7 +40,6 @@ struct TagInfo
    bool is_stat_tag;
 };
 
-#if 1
 inline bool printingRequired(StatCmd cmd)
 {
    switch(cmd)
@@ -85,7 +85,6 @@ inline bool isLogCommand(StatCmd cmd)
          return false;
    }
 }
-#endif
 
 template<typename StatLogControl, bool IsParent>
 struct DoCmd;
@@ -105,11 +104,13 @@ struct LogOutputCommand
    bool show_log_level;
 };
 
-template <typename TagNode, bool IsParentNode, typename StatLogControl>
-void processCommandsCommon(StatLogControl& stat_log_control, const std::string& user_cmds,
-      StatCmd& cmd, boost::any& cmd_arg)
+template <typename TagNode, typename StatLogControl>
+void processCommands(StatLogControl& stat_log_control, const std::string& user_cmds)
 {
    namespace po = boost::program_options;
+
+   auto cmd = StatCmd::NO_CMD;
+   boost::any cmd_arg;
 
    auto desc = detail::getProgramOptions();
    po::variables_map vm;
@@ -129,17 +130,14 @@ void processCommandsCommon(StatLogControl& stat_log_control, const std::string& 
 
    if(vm["show-tags"].as<bool>())
    {
-      std::cout << TagNode::name << std::endl;
       cmd = StatCmd::PRINT_TAG;
    }
-   if(vm["stat-types"].as<bool>())
+   else if(vm["stat-types"].as<bool>())
    {
-      std::cout << TagNode::name << std::endl;
       cmd = StatCmd::PRINT_STAT_TYPE;
    }
    else if(vm["dump-stats"].as<bool>())
    {
-      std::cout << TagNode::name << std::endl;
       cmd = StatCmd::DUMP_STAT;
    }
    else if(vm["clear-stats"].as<bool>())
@@ -150,7 +148,6 @@ void processCommandsCommon(StatLogControl& stat_log_control, const std::string& 
    {
       //Args: <LoggerIdx> [<LogLevel>]
       //No LogLevel arg will print the current log level
-      std::cout << TagNode::name << std::endl;
       auto arg_vec = vm["log-level"].as<std::vector<std::string>>();
       int logger_idx = 0;
       if(arg_vec.size() > 0)
@@ -173,9 +170,6 @@ void processCommandsCommon(StatLogControl& stat_log_control, const std::string& 
       logCmd.logger_idx = logger_idx;
       cmd = StatCmd::LOG_LEVEL;
       cmd_arg = logCmd;
-      using TheDoCmd = DoCmd<StatLogControl, IsParentNode>;
-      TheDoCmd::template Go<TagNode>(stat_log_control, cmd, cmd_arg);
-      cmd = StatCmd::NO_CMD;
    }
    else if(vm.count("output-log"))
    {
@@ -203,6 +197,12 @@ void processCommandsCommon(StatLogControl& stat_log_control, const std::string& 
       log_cmd.show_log_level = true;
       boost::any cmd_any = log_cmd;
       stat_log_control.outputLog(logger_idx, cmd_any);
+   }
+   if(cmd != StatCmd::NO_CMD)
+   {
+      constexpr bool IsParentNode = is_parent<TagNode>::value;
+      using TheDoCmd = DoCmd<StatLogControl, IsParentNode>;
+      TheDoCmd::template Go<TagNode>(stat_log_control, cmd, cmd_arg);
    }
 }
 

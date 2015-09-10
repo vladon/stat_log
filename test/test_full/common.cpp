@@ -192,6 +192,7 @@ namespace stat_log
    template LogGenProxy hexDumper<hw_intf::HW_INTF_LOG>(LogLevel ll);
    template LogGenProxy logger<mac::MAC_LOG>(LogLevel ll);
    template LogGenProxy hexDumper<sis::SIS_LOG>(LogLevel ll);
+
 //TODO: this will be super annoying for the user to have to define the
 // stat hierarchy AND explicitly instantiate each of them ...
 // Think  of a way to automate this.

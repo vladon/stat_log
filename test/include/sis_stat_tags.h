@@ -18,12 +18,12 @@ namespace sis
 
    struct SIS_STATS
    {
-      SL_NAME = "SIS";
+      SL_NAME = "SIS_STAT";
       using children = StatTags;
    };
 
    struct SIS_LOG
    {
-      SL_NAME = "SIS";
+      SL_NAME = "SIS_LOG";
    };
 }

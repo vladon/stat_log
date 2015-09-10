@@ -83,8 +83,12 @@ namespace stat_log
                   {
                      std::cerr << "Invalid log level: " << logLevelCmd.new_log_level << std::endl;
                   }
+                  std::cout << "new log level = " << LogLevelNames[log_level_idx];
                }
-               std::cout << "new log level = " << LogLevelNames[log_level_idx];
+               else
+               {
+                  std::cout << "log level = " << LogLevelNames[log_level_idx];
+               }
             }
             printFooter(cmd);
          }

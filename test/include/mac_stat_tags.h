@@ -16,13 +16,13 @@ SL_MAKE_TAGS_NAMED_BASE(
 #if 1
 struct MAC_STATS
 {
-   SL_NAME = "MAC";
+   SL_NAME = "MAC_STATS";
    using children = StatTags;
 };
 
 struct MAC_LOG
 {
-   SL_NAME = "MAC";
+   SL_NAME = "MAC_LOG";
 };
 
 #else

@@ -35,10 +35,10 @@ namespace detail
 
 
    //++++ LOGGER CONTAINERS ++++++++++
-   template <typename TagNode>
+   template <typename TheTagNode>
    struct GenericOpLogger
    {
-      using tag_node = TagNode;
+      using tag_node = TheTagNode;
       using tag = typename tag_node::tag;
       void setSharedPtr(void* ptr)
       {
@@ -58,10 +58,10 @@ namespace detail
       Proxy theProxy;
    };
 
-   template <typename TagNode>
+   template <typename TheTagNode>
    struct GenericControlLogger
    {
-      using tag_node = TagNode;
+      using tag_node = TheTagNode;
       using tag = typename tag_node::tag;
       void setSharedPtr(void* ptr)
       {
@@ -92,10 +92,10 @@ namespace detail
    //Stat "parent" nodes -- unlike like log parent nodes --
    //aren't directly interacted with by either the control
    //or operational code.
-   template <typename TagNode>
+   template <typename TheTagNode>
    struct StatParent
    {
-      using tag_node = TagNode;
+      using tag_node = TheTagNode;
       using tag = typename tag_node::tag;
 
       void setSharedPtr(void* ptr) {}
@@ -111,10 +111,10 @@ namespace detail
       }
    };
 
-   template <typename TagNode>
+   template <typename TheTagNode>
    struct GenericOpStat
    {
-      using tag_node = TagNode;
+      using tag_node = TheTagNode;
       using tag = typename tag_node::tag;
 
       template <typename... Args>
@@ -143,10 +143,10 @@ namespace detail
    };
 
 
-   template <typename TagNode>
+   template <typename TheTagNode>
    struct GenericControlStat
    {
-      using tag_node = TagNode;
+      using tag_node = TheTagNode;
       using tag = typename tag_node::tag;
 
       void setSharedPtr(void* ptr)
@@ -171,31 +171,22 @@ namespace detail
 
    ///////////////
 
-   template <typename T>
-   struct is_parent
-   {
-      //T is of type "struct TagNode"
-      //Then T::child_list should be either another sequence (if parent) or void
-      using type = typename mpl::is_sequence<typename T::child_list>::type;
-      static const bool value = mpl::is_sequence<typename T::child_list>::value;
-   };
-
-   template <typename GlobalTagVec, typename ThisTagNode,
+   template <typename GlobalTagVec, typename TheTagNode,
              typename IsOpType, typename IsStatType>
    struct stat_log_inserter
    {
-      //ThisTagNode is of type "struct TagNode"
+      //TheTagNode is of type "struct TagNode"
       using this_node = typename std::conditional_t<
             IsStatType::value,
             typename std::conditional_t<
                IsOpType::value,
-               GenericOpStat<ThisTagNode>,
-               GenericControlStat<ThisTagNode>
+               GenericOpStat<TheTagNode>,
+               GenericControlStat<TheTagNode>
             >,
             typename std::conditional_t<
                IsOpType::value,
-               GenericOpLogger<ThisTagNode>,
-               GenericControlLogger<ThisTagNode>
+               GenericOpLogger<TheTagNode>,
+               GenericControlLogger<TheTagNode>
             >
          >;
       //Finally add this stat (or log) to the global tag vec
@@ -262,10 +253,10 @@ namespace detail
              class... StatTagArgs>
    struct tag_node_query
    {
-      template<typename TagNode>
+      template<typename TheTagNode>
       struct apply
       {
-         using stat_tag = typename TagNode::tag;
+         using stat_tag = typename TheTagNode::tag;
          using type = std::integral_constant
             <
                bool,

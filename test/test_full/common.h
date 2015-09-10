@@ -8,7 +8,7 @@
 
 struct MAC_SIS_STATS
 {
-   SL_NAME = "MAC_SIS";
+   SL_NAME = "MAC_SIS_STAT";
    using children = SL_MAKE_LIST
    (
       (mac::MAC_STATS)
@@ -18,7 +18,7 @@ struct MAC_SIS_STATS
 
 struct MAC_SIS_LOG
 {
-   SL_NAME = "MAC_SIS";
+   SL_NAME = "MAC_SIS_LOG";
    using children = SL_MAKE_LIST
    (
       (mac::MAC_LOG)

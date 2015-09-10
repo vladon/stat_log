@@ -14,13 +14,13 @@ SL_MAKE_TAGS_NAMED_BASE(
 
 struct HW_INTF_STATS
 {
-   SL_NAME = "HW_INTF";
+   SL_NAME = "HW_INTF_STATS";
    using children = StatTags;
 };
 
 struct HW_INTF_LOG
 {
-   SL_NAME = "HW_INTF";
+   SL_NAME = "HW_INTF_LOG";
 };
 }
 

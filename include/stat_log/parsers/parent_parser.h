@@ -9,7 +9,6 @@
 namespace stat_log
 {
 
-
 //DoCmd specialization for non-leaf nodes
 template<typename StatLogControl>
 struct DoCmd<StatLogControl, true>
@@ -23,39 +22,16 @@ struct DoCmd<StatLogControl, true>
       for_each(Children{}, [&](auto tag_node)
       {
          using ChildTagNode = decltype(tag_node);
-         using IsParent = typename detail::is_parent<ChildTagNode>;
-         using TheDoCmd = DoCmd<StatLogControl, IsParent::value>;
+         constexpr bool IsParent = is_parent<ChildTagNode>::value;
+         using TheDoCmd = DoCmd<StatLogControl, IsParent>;
          TheDoCmd::template Go<ChildTagNode>(stat_log_control, cmd, cmd_arg);
       });
    }
 };
 
-
-template <typename TagNode, typename StatLogControl>
-typename std::enable_if_t<detail::is_parent<TagNode>::value>
-processCommands(StatLogControl& stat_log_control, const std::string& user_cmds)
-{
-   using namespace boost::fusion;
-
-   auto cmd = StatCmd::NO_CMD;
-   boost::any cmd_arg;
-   processCommandsCommon<TagNode, true>(stat_log_control, user_cmds, cmd, cmd_arg);
-   using Children = typename TagNode::child_list;
-   if(cmd != StatCmd::NO_CMD)
-   {
-      for_each(Children{}, [&](auto tag_node)
-      {
-         using ChildTagNode = decltype(tag_node);
-         using IsParent = typename detail::is_parent<ChildTagNode>;
-         using TheDoCmd = DoCmd<StatLogControl, IsParent::value>;
-         TheDoCmd::template Go<ChildTagNode>(stat_log_control, cmd, cmd_arg);
-      });
-   }
-}
-
 template <typename TagNode, typename StatLogControl,
          typename std::enable_if<
-         detail::is_parent<TagNode>::value
+            is_parent<TagNode>::value
          >::type* = nullptr
    >
 void parse(StatLogControl& stat_log_control, std::string& component_name, std::string& user_cmds)

@@ -132,20 +132,27 @@ namespace stat_log
             bool is_enabled,
             const char* const tag_name,
             const char* const log_level_name)
-         : theLogger(logger),
+         : ss_ptr(std::make_unique<std::stringstream>()),
+           theLogger(&logger),
            enabled(is_enabled),
            TagName(tag_name),
            LogLevelName(log_level_name)
       {}
+
+      LogGenProxy(LogGenProxy&& other) = default;
+
+      ~LogGenProxy()
+      {
+         if(!ss_ptr->str().empty())
+            theLogger->writeData(ss_ptr->str(), TagName, LogLevelName);
+      }
 
       template <typename T>
       LogGenProxy& operator<<(T const& value)
       {
          if(false == enabled)
             return *this;
-         std::stringstream ss;
-         ss << value;
-         theLogger.writeData(ss.str(), TagName, LogLevelName);
+         *ss_ptr << value;
          return *this;
       }
 
@@ -153,19 +160,21 @@ namespace stat_log
       {
          if(false == enabled)
             return;
-         std::stringstream ss;
-         ss << label << "\n";
-         ss << std::setfill('0');
+         *ss_ptr << label << "\n";
+         *ss_ptr << std::setfill('0');
          for(std::size_t i = 0; i < len; ++i)
          {
-            ss << std::hex << std::setw(2) << (unsigned int)buf[i];
-            ss << (((i+1) % 32 == 0)? "\n" : " ");
+            *ss_ptr << std::hex << std::setw(2) << (unsigned int)buf[i];
+            *ss_ptr << (((i+1) % 32 == 0)? "\n" : " ");
          }
-         theLogger.writeData(ss.str(), TagName, LogLevelName);
       }
 
      private:
-      LoggerGenerator& theLogger;
+      //Looks like a gcc bug (supposedly fixed in 5.0)
+      // makes this not compile if we don't wrap it with
+      // a unique_ptr
+      std::unique_ptr<std::stringstream> ss_ptr;
+      LoggerGenerator* theLogger;
       bool enabled;
       const char* const TagName;
       const char* const LogLevelName;

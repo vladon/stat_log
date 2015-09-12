@@ -186,6 +186,8 @@ shared_mem_logger_retriever::getLog(boost::any& log_args)
       output_file.open(log_params.output_filename, std::fstream::out);
       output_ptr = &output_file;
    }
+   const auto& exclude_tags = log_params.exclude_tags;
+   const auto& exclude_log_levels = log_params.exclude_log_levels;
    auto& output = *output_ptr;
    bool show_tag = log_params.show_tag;
    bool show_time_stamp = log_params.show_time_stamp;
@@ -252,6 +254,29 @@ shared_mem_logger_retriever::getLog(boost::any& log_args)
       ++num_log_entries_processed;
       if(log_hdr_ptr->commonHeader.numBlocks == 0)
          continue;
+
+      bool should_print_entry = true;
+      auto found_string_in_list = [&](const auto & string_list, const auto& string_to_find)
+      {
+          auto it = std::find_if(string_list.cbegin(), string_list.cend(),
+                  [&](const auto& str)
+                  {
+                     return str == string_to_find;
+                  });
+
+          return it != string_list.cend();
+      };
+
+      if(exclude_tags.empty() == false)
+      {
+         should_print_entry =
+            !found_string_in_list(exclude_tags, log_hdr_ptr->tagName.data());
+      }
+      if(should_print_entry && exclude_log_levels.empty() == false)
+      {
+         should_print_entry =
+            !found_string_in_list(exclude_log_levels, log_hdr_ptr->logLevelName.data());
+      }
       //4
       if(show_time_stamp)
       {
@@ -265,34 +290,40 @@ shared_mem_logger_retriever::getLog(boost::any& log_args)
             std::exit(1);
          }
          std::strftime(mbstr, sizeof(mbstr), "%T", loc_time_ptr);
-         output << std::dec
-            << mbstr
-            //std::put_time does not exist in GCC :(
-            // << "Time = " << std::put_time(std::localtime(&time_stamp), "%T")
-            << "." << time_stamp_us.count()
-            << ": ";
+         if(should_print_entry)
+            output << std::dec
+               << mbstr
+               //std::put_time does not exist in GCC :(
+               // << "Time = " << std::put_time(std::localtime(&time_stamp), "%T")
+               << "." << time_stamp_us.count()
+               << ": ";
       }
       if(show_tag)
       {
-         output << log_hdr_ptr->tagName.data() << ": ";
+         if(should_print_entry)
+            output << log_hdr_ptr->tagName.data() << ": ";
       }
       if(show_log_level)
       {
-         output << log_hdr_ptr->logLevelName.data() << ": ";
+         if(should_print_entry)
+            output << log_hdr_ptr->logLevelName.data() << ": ";
       }
 
       auto data_ptr = reinterpret_cast<const char*>(log_hdr_ptr+1);
-      output << data_ptr;
+      if(should_print_entry)
+         output << data_ptr;
       for(unsigned int i = 0; i < log_hdr_ptr->commonHeader.numBlocks - 1; ++i)
       {
          log_entry_ptr = reinterpret_cast<const LogBufEntry*>(temp_log_buf.data()) + cur_log_entry;
          auto log_sub_hdr_ptr = reinterpret_cast<const LogHeaderCommon*>(log_entry_ptr);
          data_ptr = reinterpret_cast<const char*>(log_sub_hdr_ptr + 1);
-         output << data_ptr;
+         if(should_print_entry)
+            output << data_ptr;
          ++num_log_entries_processed;
          cur_log_entry = (cur_log_entry + 1) % numLogEntries;
       }
-      output << std::endl;
+      if(should_print_entry)
+         output << std::endl;
    }
    if(output_file.is_open())
       output_file.close();

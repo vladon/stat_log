@@ -4,8 +4,6 @@
 #include <stat_log/parsers/leaf_parser.h>
 #include <stat_log/util/utils.h>
 
-#include <boost/lexical_cast.hpp>
-
 namespace stat_log
 {
 

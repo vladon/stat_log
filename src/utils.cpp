@@ -42,14 +42,12 @@ namespace detail
          ("log-level", po::value<std::vector<std::string>>()->multitoken()->zero_tokens(),
           "Set/Show per component log level. Args\n"
           "\t<loggerIdx> [<LogLevel>]\n"
-          "where loggerIdx is the index of the logger, and LogLevel is new value\n"
-          "for the log level (if this argument is not specified the\n"
-          "current log level is displayed).")
+          "where loggerIdx is the index of the logger, and LogLevel is\n"
+          "the new value for the log level (if this argument is not\n"
+          "specified the current log level is displayed).")
 
          ("output-log", po::value<std::vector<std::string>>()->multitoken()->zero_tokens(),
-          "Show log output. Args\n"
-          "\t<loggerIdx> [<outputFile>]\n"
-          "If outputFile is not provided the log is dumped to stdout.\n")
+          "type \"output-log --help\" for all options")
          ;
       return std::move(desc);
    }
@@ -94,6 +92,7 @@ std::string getComponentName(std::string cmd_line)
    po::variables_map vm;
    po::store(po::command_line_parser(tokenize(cmd_line))
          .options(desc)
+         .allow_unregistered()
          .run(),
          vm);
    po::notify(vm);

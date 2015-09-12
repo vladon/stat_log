@@ -99,9 +99,11 @@ struct LogLevelCommand
 struct LogOutputCommand
 {
    std::string output_filename;
-   bool show_tag;
-   bool show_time_stamp;
-   bool show_log_level;
+   std::vector<std::string> exclude_tags;
+   std::vector<std::string> exclude_log_levels;
+   bool show_tag = true;
+   bool show_time_stamp = true;
+   bool show_log_level = true;
 };
 
 template <typename TagNode, typename StatLogControl>
@@ -114,16 +116,11 @@ void processCommands(StatLogControl& stat_log_control, const std::string& user_c
 
    auto desc = detail::getProgramOptions();
    po::variables_map vm;
-   po::store(po::command_line_parser(tokenize(user_cmds))
+   auto parsed = po::command_line_parser(tokenize(user_cmds))
          .options(desc)
-         .run(),
-         vm);
-
-   if(vm.count("help"))
-   {
-      std::cout << desc << std::endl;
-      std::exit(0);
-   }
+         .allow_unregistered()
+         .run();
+   po::store(parsed, vm);
 
    setStartingDepth(TagNode::depth);
    cmd = StatCmd::NO_CMD;
@@ -173,31 +170,68 @@ void processCommands(StatLogControl& stat_log_control, const std::string& user_c
    }
    else if(vm.count("output-log"))
    {
-      auto arg_vec = vm["output-log"].as<std::vector<std::string>>();
-      std::string output_file;
-      int logger_idx = 0;
-      if(arg_vec.size() >  0)
-      {
-         try
-         {
-            logger_idx = boost::lexical_cast<int>(arg_vec[0]);
-         }
-         catch(boost::bad_lexical_cast&)
-         {
-            std::cerr << "Invalid logger idx!\n";
-         }
-      }
-      if(arg_vec.size() > 1)
-         output_file = arg_vec[1];
       LogOutputCommand log_cmd;
-      log_cmd.output_filename = output_file;
-      //TODO: make viewing tags, timestamps and log_levels configurable.
-      log_cmd.show_tag = true;
-      log_cmd.show_time_stamp = true;
-      log_cmd.show_log_level = true;
+      auto arg_vec = vm["output-log"].as<std::vector<std::string>>();
+      po::options_description log_desc("output log options");
+      log_desc.add_options()
+         ("help", "Show help")
+         ("out-file", po::value<std::string>(),
+          "Output file name, if not given will default to stdout.")
+         ("log-idx", po::value<int>(),  "Logger index")
+         ("no-tag", "Don't show tag")
+         ("no-time-stamp", "Don't show time stamp")
+         ("no-log-level", "Don't show log level")
+         ("exclude-tags", po::value<std::vector<std::string>>()->multitoken()->zero_tokens(),
+            "Do not output log entries corresponding to the supplied list of tags")
+         ("exclude-log-levels", po::value<std::vector<std::string>>()->multitoken()->zero_tokens(),
+            "Do not output log entries corresponding to the supplied list of log-levels\n"
+            "For example \"DEBUG INFO\"")
+         ;
+      int logger_idx = 0;
+      auto opts = po::collect_unrecognized(parsed.options, po::include_positional);
+      po::store(po::command_line_parser(opts).options(log_desc).run(), vm);
+      if(vm.count("help"))
+      {
+         std::cout << log_desc << std::endl;
+         std::exit(0);
+      }
+      if(vm.count("log-file"))
+      {
+         log_cmd.output_filename = vm["log-file"].as<std::string>();
+      }
+      if(vm.count("log-idx"))
+      {
+         logger_idx = vm["log-idx"].as<int>();
+      }
+      if(vm.count("no-tag"))
+      {
+         log_cmd.show_tag = false;
+      }
+      if(vm.count("no-time-stamp"))
+      {
+         log_cmd.show_time_stamp = false;
+      }
+      if(vm.count("no-log-level"))
+      {
+         log_cmd.show_log_level = false;
+      }
+      if(vm.count("exclude-tags"))
+      {
+         log_cmd.exclude_tags = vm["exclude-tags"].as<std::vector<std::string>>();
+      }
+      if(vm.count("exclude-log-levels"))
+      {
+         log_cmd.exclude_log_levels = vm["exclude-log-levels"].as<std::vector<std::string>>();
+      }
       boost::any cmd_any = log_cmd;
       stat_log_control.outputLog(logger_idx, cmd_any);
    }
+   if(vm.count("help"))
+   {
+      std::cout << desc << std::endl;
+      std::exit(0);
+   }
+
    if(cmd != StatCmd::NO_CMD)
    {
       constexpr bool IsParentNode = is_parent<TagNode>::value;

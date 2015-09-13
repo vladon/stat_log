@@ -3,6 +3,9 @@
 
 void genStats_MAC()
 {
-   stat_log::writeStat<mac::IP_PKTS_UP_TAG>(1);
+   #if 0
+   stat_log::writeStat<mac::IP_PKTS_RCVD_TAG>(1);
+   #endif
+
 }
 

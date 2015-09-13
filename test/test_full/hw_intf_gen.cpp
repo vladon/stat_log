@@ -3,9 +3,11 @@
 
 void genStats_HW_INTF()
 {
-   stat_log::writeStat<hw_intf::MISC_FPGA_FAULT_TAG>(1);
+   #if 0
+   stat_log::writeStat<hw_intf::FPGA_FAULT_TAG>(1);
    for(auto i = 0; i < 100; ++i)
    {
-      stat_log::writeStat<hw_intf::MISC_FPGA_FAULT_TAG>(i%5);
+      stat_log::writeStat<hw_intf::FPGA_FAULT_TAG>(i%5);
    }
+   #endif
 }

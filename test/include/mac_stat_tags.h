@@ -8,9 +8,12 @@ struct MacBase {};
 SL_MAKE_TAGS_NAMED_BASE(
       StatTags,
       MacBase,
-   (IP_PKTS_DOWN)
-   (IP_PKTS_UP)
-   (BUFFER_OVERFLOW)
+   (IP_PKTS_SENT)
+   (IP_PKTS_RCVD)
+   (FRAGS_SENT)
+   (FRAGS_RCVD)
+   (TX_POWER_LEVEL)
+   (RX_POWER_LEVEL)
 );
 
 #if 1

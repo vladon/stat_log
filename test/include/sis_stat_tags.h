@@ -8,10 +8,9 @@ namespace sis
    SL_MAKE_TAGS_NAMED_BASE(
                StatTags,
                SisBase,
-               (MAC_PKTS_DOWN)
-               (MAC_PKTS_UP)
-               (LINK_QUALITY)
-               (RECEIVE_STATUS)
+               (PROP_DELAY)
+               (CHANNEL_QUALITY)
+               (FRAME_RX_STATUS)
                (LINK_STATUS)
          );
 

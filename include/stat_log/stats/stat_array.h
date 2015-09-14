@@ -31,10 +31,9 @@ namespace stat_array_detail
          stat_type& stat,
          StatCmd cmd,
          boost::any& arg,
-         const TagInfo& tag_info,
-         bool is_substat)
+         StatCmdOutput& stat_output)
       {
-         stat.doStatCommand(ptr, cmd, arg, tag_info, true);
+         stat.doStatCommand(ptr, cmd, arg, stat_output);
       }
    };
 
@@ -55,10 +54,10 @@ namespace stat_array_detail
       }
 
       static void doStatCommand(void* ptr, stat_type& stat,
-            StatCmd cmd, boost::any& arg, const TagInfo& tag_info, bool is_substat)
+            StatCmd cmd, boost::any& arg, StatCmdOutput& stat_output)
       {
          traits<stat_type, IsOperational>::doStatCommand(ptr,
-               stat, cmd, arg, tag_info, true);
+               stat, cmd, arg, stat_output);
       }
    };
 
@@ -107,48 +106,30 @@ namespace stat_array_detail
       }
 
       void doStatCommand(void* ptr, StatCmd cmd,
-            boost::any& arg, const TagInfo& tag_info, bool is_substat)
+            boost::any& arg, StatCmdOutput& stat_output)
       {
          auto& shared_array = *reinterpret_cast<shared_type*>(ptr);
-         if(!is_substat)
-            printHeader(cmd, tag_info);
-#if 0
-         if(printingRequired(cmd))
-         {
-            if(!is_substat)
-               std::cout << std::endl;
-            if(cmd == StatCmd::PRINT_STAT_TYPE)
-            {
-               std::cout << "STAT_ARRAY" << std::endl;
-            }
-            std::cout << std::dec << "[";
-         }
-#endif
+         stat_output.dimensionSizes.push_back(Size);
          if(cmd == StatCmd::PRINT_STAT_TYPE)
          {
-            std::cout << "STAT_ARRAY" << std::endl;
-            //TODO: print type and dimensions
+            std::stringstream ss;
+            std::cout << "STAT_ARRAY of type: " << std::endl;
+            stat_output.dimensionSizes.push_back(Size);
+            statEntries[0].doStatCommand(ptr, cmd, arg, stat_output);
+            ss << "STAT_ARRAY of type: " <<  stat_output.entryTitle
+               << ", size = " << Size;
+            stat_output.entries.clear();
+            stat_output.entries.push_back(ss.str());
             return;
          }
 
          for(size_t i = 0; i < Size; ++i)
          {
-            if(cmd == StatCmd::DUMP_STAT)
-            {
-               std::cout << i << ": ";
-            }
             TheTraits::doStatCommand(
                   (void*)&shared_array[i],
                   statEntries[i],
-                  cmd, arg, tag_info, true);
-
-            if(cmd == StatCmd::DUMP_STAT)
-            {
-               std::cout << std::endl;
-            }
+                  cmd, arg, stat_output);
          }
-         if(!is_substat)
-            printFooter(cmd);
       }
    };
 
@@ -180,41 +161,29 @@ namespace stat_array_detail
       }
 
       void doStatCommand(void* ptr, StatCmd cmd,
-            boost::any& arg, const TagInfo& tag_info, bool is_substat)
+            boost::any& arg, StatCmdOutput& stat_output)
       {
          auto& theArray = *reinterpret_cast<shared_type*>(ptr);
-         //TODO: handle all commands
-         if(!is_substat)
-            printHeader(cmd, tag_info);
-         #if 0
-         if(printingRequired(cmd))
-         {
-            std::cout << std::endl;
-            if(cmd == StatCmd::PRINT_STAT_TYPE)
-            {
-               std::cout << "STAT_ARRAY" << std::endl;
-            }
-            std::cout << std::dec << "[";
-         }
-         #endif
-
+         stat_output.dimensionSizes.push_back(Size);
          if(cmd == StatCmd::PRINT_STAT_TYPE)
          {
-            std::cout << "STAT_ARRAY" << std::endl;
-            //TODO: print type and dimensions
+            statEntries[0].doStatCommand(ptr, cmd, arg, stat_output);
+            std::stringstream ss;
+            ss << "STAT_ARRAY of type: " <<  stat_output.entryTitle
+               << ", sizes = ";
+            for(auto d: stat_output.dimensionSizes)
+            {
+               ss << d << " ";
+            }
+            stat_output.entries.clear();
+            stat_output.entries.push_back(ss.str());
             return;
          }
          for(size_t i = 0; i < Size; ++i)
          {
-            if(cmd == StatCmd::DUMP_STAT)
-            {
-               std::cout << i << ",";
-            }
             auto child_ptr = reinterpret_cast<void*>(&theArray[i]);
-            statEntries[i].doStatCommand(child_ptr, cmd, arg, tag_info, true);
+            statEntries[i].doStatCommand(child_ptr, cmd, arg, stat_output);
          }
-         if(!is_substat)
-            printFooter(cmd);
       }
    };
 }
@@ -253,17 +222,5 @@ template <size_t Size, typename Repr>
 struct is_serialization_deferred<StatArray<Size, Repr>>
 {
    static constexpr bool value = is_serialization_deferred<Repr>::value;
-};
-
-template <int Size, typename Repr>
-struct num_stat_dimensions<StatArray<Size, Repr>>
-{
-      static constexpr int value = 1;
-};
-
-template <int Size, typename Repr, int N>
-struct num_stat_dimensions<StatArray<Size, StatArray<N, Repr>>>
-{
-      static constexpr int value = 1 + num_stat_dimensions<StatArray<N,Repr>>::value;
 };
 }

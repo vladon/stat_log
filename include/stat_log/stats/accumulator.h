@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <ios>
 #include <mutex>
+#include <array>
 
 namespace stat_log
 {
@@ -165,14 +166,13 @@ namespace detail
             void* shared_ptr,
             StatCmd cmd,
             boost::any& arg,
-            const TagInfo& tag_info,
-            bool is_substat)
+            StatCmdOutput& stat_output)
       {
          using namespace boost::fusion;
 
          auto ptr = reinterpret_cast<char*>(shared_ptr);
-         if(!is_substat)
-            printHeader(cmd, tag_info);
+         std::stringstream ss_title;
+         std::stringstream ss_entry;
          //TODO: handle all commands
          if(cmd == StatCmd::DUMP_STAT)
          {
@@ -189,39 +189,39 @@ namespace detail
             size_t max_pad = max_width + 2;
             size_t total_width = num_fields * max_pad;
 
-            std::cout << '\n';
-            const auto orig_flags = std::cout.flags();
-            std::cout.flags(std::ios::left);
+            ss_title.flags(std::ios::left);
+            ss_entry.flags(std::ios::left);
             for_each(feature_handlers{}, [&](auto feature_handler)
             {
                using FeatureHandlerType = decltype(feature_handler);
-               std::cout << std::setw(max_pad) << FeatureHandlerType::stat_name;
+               ss_title << std::setw(max_pad);
+               FeatureHandlerType::getTitle(ptr, ss_title);
+               ptr += FeatureHandlerType::size();
             });
-            std::cout << std::setfill('-') << std::setw(total_width) << '\n' << std::endl;
-            std::cout << std::setfill(' ') ;
+            ptr = reinterpret_cast<char*>(shared_ptr);
             for_each(feature_handlers{}, [&](auto feature_handler)
             {
                using FeatureHandlerType = decltype(feature_handler);
                if(num_fields > 1)
                {
-                  std::cout.width(max_pad);
-                  std::cout.precision(max_width);
+                  ss_entry.width(max_pad);
+                  ss_entry.precision(max_width);
                }
-               FeatureHandlerType::dumpStat(ptr);
+               FeatureHandlerType::dumpStat(ptr, ss_entry);
                ptr += FeatureHandlerType::size();
             });
-            std::cout.flags(orig_flags);
-            std::cout << std::endl;
+            stat_output.entryTitle = ss_title.str();
+            stat_output.entries.push_back(ss_entry.str());
          }
          else if(cmd == StatCmd::PRINT_STAT_TYPE)
          {
-            std::cout << "Accumulator:";
+            ss_title << "Accumulator:";
             for_each(feature_handlers{}, [&](auto feature_handler)
             {
                   using FeatureHandlerType = decltype(feature_handler);
-                  std::cout << " " << FeatureHandlerType::stat_name;
+                  ss_title << " " << FeatureHandlerType::stat_name;
             });
-            std::cout << std::endl;
+            stat_output.entryTitle = ss_title.str();
          }
          else if(cmd == StatCmd::CLEAR_STAT)
          {
@@ -229,8 +229,6 @@ namespace detail
             auto control_word_ptr = reinterpret_cast<control_word*>(ptr);
             *control_word_ptr = 1;
          }
-         if(!is_substat)
-            printFooter(cmd);
       }
    };
 

@@ -32,6 +32,7 @@ enum class StatCmd
    PRINT_TAG,
 };
 
+//TODO: move this somewhere else (in the "printing" code?)
 struct TagInfo
 {
    const char* const name;

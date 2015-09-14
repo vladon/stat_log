@@ -5,6 +5,7 @@
 #include <type_traits>
 #include <vector>
 #include <string>
+#include <sstream>
 
 namespace stat_log
 {
@@ -28,10 +29,12 @@ struct is_serialization_deferred
    static constexpr bool value = false;
 };
 
-template <typename Repr>
-struct num_stat_dimensions
+//Used to retrieve the string view of each statistic.
+struct StatCmdOutput
 {
-   static constexpr int value = 1;
+   std::string entryTitle;
+   std::vector<std::string> entries;
+   std::vector<size_t> dimensionSizes;
 };
 
 namespace detail
@@ -45,24 +48,6 @@ namespace detail
    struct stat_type_to_impl
    {
       using type = StatType;
-   };
-
-   struct ControlStatBase
-   {
-      using shared_type = void;
-      static void doStatCommand(
-            void* shared_ptr,
-            StatCmd cmd,
-            boost::any& arg,
-            const TagInfo& tag_info,
-            bool is_substat)
-      {
-         if(printingRequired(cmd))
-         {
-            cmd = StatCmd::PRINT_TAG;
-            printHeader(cmd, tag_info);
-         }
-      }
    };
 
 
@@ -81,28 +66,25 @@ namespace detail
             void* shared_ptr,
             StatCmd cmd,
             boost::any& arg,
-            const TagInfo& tag_info,
-            bool is_substat)
+            StatCmdOutput& stat_output)
       {
          auto ptr = reinterpret_cast<shared_type*>(shared_ptr);
          //TODO: handle all commands
          auto& val = *ptr;
-         if(!is_substat)
-            printHeader(cmd, tag_info);
          if(cmd == StatCmd::DUMP_STAT)
          {
-            std::cout << std::dec << (unsigned long int)val;
+            std::stringstream ss;
+            ss << (unsigned long int)val;
+            stat_output.entries.push_back(ss.str());
          }
          else if(cmd == StatCmd::PRINT_STAT_TYPE)
          {
-            std::cout << "Simple Stat";
+            stat_output.entryTitle = "Simple Stat";
          }
          else if(cmd == StatCmd::CLEAR_STAT)
          {
             val = 0;
          }
-         if(!is_substat)
-            printFooter(cmd);
       }
    };
 

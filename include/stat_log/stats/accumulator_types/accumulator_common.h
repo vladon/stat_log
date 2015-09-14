@@ -65,6 +65,8 @@ struct traits_common
       ss << *reinterpret_cast<shared_type*>(ptr);
    }
 };
-}
-}
+
+} //detail
+} //accumulator
+} //stat_log
 

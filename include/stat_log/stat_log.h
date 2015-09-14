@@ -177,13 +177,10 @@ struct LogStatControl :
    sendCommand(StatCmd cmd, boost::any& cmd_arg)
    {
       using Tag = typename StatTagNode::tag;
-      TagInfo tag_info{
-         StatTagNode::name,
-         std::type_index(typeid(Tag)),
-         StatTagNode::depth,
-         true};
+      StatCmdOutput stat_output;
       detail::getHandle<typename StatTagNode::tag>(this->theStats)
-         .doCommand(cmd, cmd_arg, tag_info);
+         .doCommand(cmd, cmd_arg, stat_output);
+      // statPrinter.addStatOutput(cmd, std::type_index(typeid(Tag)), stat_output);
    }
 
    template <typename LogTagNode>

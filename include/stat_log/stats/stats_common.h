@@ -147,14 +147,11 @@ struct OperationalStatProxy : detail::StatProxyBase<StatType, true>
 template <typename StatType>
 struct ControlStatProxy : detail::StatProxyBase<StatType, false>
 {
-   void doCommand(StatCmd cmd, boost::any& cmd_arg, const TagInfo& tag_info)
+   void doCommand(StatCmd cmd, boost::any& cmd_arg, StatCmdOutput& stat_output)
    {
       if(false == isStatisticCommand(cmd))
          return;
-      if(cmd == StatCmd::PRINT_TAG)
-         printHeader(cmd, tag_info);
-      else
-         this->doStatCommand(this->shared_ptr, cmd, cmd_arg, tag_info, false);
+      this->doStatCommand(this->shared_ptr, cmd, cmd_arg, stat_output);
    }
 };
 

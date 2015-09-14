@@ -105,13 +105,7 @@ namespace detail
 
       template <typename... Args>
       void doCommand(Args&&... args)
-      {
-         #if 0
-         using NullProxy = ControlStatProxy<detail::ControlStatBase>;
-         NullProxy{}.doCommand(std::forward<Args>(args)...);
-         #endif
-
-      }
+      {}
    };
 
    template <typename TheTagNode>

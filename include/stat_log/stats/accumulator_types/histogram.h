@@ -35,51 +35,6 @@ namespace stat_log
          using sample_type = Sample;
          using features_type = boost::mpl::vector<tag_type>;
       };
-
-      template <typename AccumSet, typename HistTypeTag>
-      struct traits_common_hist
-      {
-         using shared_type = std::array<
-            std::tuple<typename AccumSet::sample_type, std::size_t>, // (bin_start, count in bin)
-            AccumSet::num_hist_bins>;
-         static void serialize(AccumSet& acc, char* ptr)
-         {
-            const auto& hist = boost::accumulators::extractor<HistTypeTag>{}(acc.acc);
-            auto hist_shared_ptr = reinterpret_cast<shared_type*>(ptr);
-            for(std::size_t i = 0; i < hist_shared_ptr->size(); ++i)
-            {
-               auto& tup = (*hist_shared_ptr)[i];
-               std::get<0>(tup) = hist[i].first;
-               std::get<1>(tup) = hist[i].second;
-            }
-         }
-
-         static constexpr size_t size()
-         {
-            return sizeof(shared_type);
-         }
-
-         static void getTitle(void* ptr, std::stringstream& ss)
-         {
-            auto hist_ptr = reinterpret_cast<shared_type*>(ptr);
-            for(std::size_t i = 0; i < hist_ptr->size(); ++i)
-            {
-               const auto& tup = (*hist_ptr)[i];
-               ss << std::get<0>(tup);
-            }
-         }
-
-         static void dumpStat(void* ptr, std::stringstream& ss)
-         {
-            auto hist_ptr = reinterpret_cast<shared_type*>(ptr);
-            for(std::size_t i = 0; i < hist_ptr->size(); ++i)
-            {
-               const auto& tup = (*hist_ptr)[i];
-               ss << std::get<1>(tup);
-            }
-         }
-      };
-
    }
 
    template <typename Sample, int min_range, int max_range, int num_bins = 10>
@@ -97,6 +52,53 @@ namespace stat_log
 
    namespace accumulator
    {
+
+      namespace detail
+      {
+         template <typename AccumSet, typename HistTypeTag>
+         struct traits_common_hist
+         {
+            using shared_type = std::array<
+               std::tuple<typename AccumSet::sample_type, std::size_t>, // (bin_start, count in bin)
+               AccumSet::num_hist_bins>;
+            static void serialize(AccumSet& acc, char* ptr)
+            {
+               const auto& hist = boost::accumulators::extractor<HistTypeTag>{}(acc.acc);
+               auto hist_shared_ptr = reinterpret_cast<shared_type*>(ptr);
+               for(std::size_t i = 0; i < hist_shared_ptr->size(); ++i)
+               {
+                  auto& tup = (*hist_shared_ptr)[i];
+                  std::get<0>(tup) = hist[i].first;
+                  std::get<1>(tup) = hist[i].second;
+               }
+            }
+
+            static constexpr size_t size()
+            {
+               return sizeof(shared_type);
+            }
+
+            static void getTitle(void* ptr, std::stringstream& ss)
+            {
+               auto hist_ptr = reinterpret_cast<shared_type*>(ptr);
+               for(std::size_t i = 0; i < hist_ptr->size(); ++i)
+               {
+                  const auto& tup = (*hist_ptr)[i];
+                  ss << std::get<0>(tup);
+               }
+            }
+
+            static void dumpStat(void* ptr, std::stringstream& ss)
+            {
+               auto hist_ptr = reinterpret_cast<shared_type*>(ptr);
+               for(std::size_t i = 0; i < hist_ptr->size(); ++i)
+               {
+                  const auto& tup = (*hist_ptr)[i];
+                  ss << std::get<1>(tup);
+               }
+            }
+         };
+      }
       //WARNING: the AccumSet CANNOT be a normal boost accumulator_set.
       // It is required to be a specialization of the Histogram template above
       // (I did this because I needed a way to forward the histogram constructor

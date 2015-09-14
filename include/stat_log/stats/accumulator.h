@@ -155,7 +155,7 @@ namespace detail
             });
 
             size_t max_pad = max_width + 2;
-            size_t total_width = num_fields * max_pad;
+            // size_t total_width = num_fields * max_pad;
 
             ss_title.flags(std::ios::left);
             ss_entry.flags(std::ios::left);

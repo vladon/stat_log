@@ -1,8 +1,10 @@
 #pragma once
 #include <stat_log/parsers/parser_common.h>
 #include <stat_log/stats/stats_common.h>
+#include <stat_log/stats/accumulator_types/accumulator_common.h>
 #include <boost/mpl/transform.hpp>
 #include <boost/mpl/arg.hpp>
+#include <boost/mpl/plus.hpp>
 #include <boost/mpl/accumulate.hpp>
 #include <boost/fusion/include/as_list.hpp>
 
@@ -18,40 +20,6 @@ namespace stat_log
 
 template <typename AccumSet>
 struct Accumulator {};
-
-namespace accumulator
-{
-
-   //ACCUMULATOR TRAITS:
-   //For each statistic type the user defines, they must also provide a mapping
-   //so the library knowns how to serialize the stat into shared memory.
-   //For example, suppose the _mean_ stat is to be used. In this case, the user
-   //must provide something like (where AccumulatorSetType is their definition
-   //of accumulator_set<..>):
-   //
-   //   template <>
-   //   struct traits<AccumulatorSetType, boost::accumulator::tag::mean>
-   //   {
-   //       using shared_type = typename AccumulatorSetType::sample_type;
-   //       static void serialize(AccumulatorSetType& acc, char* ptr)
-   //       {
-   //          *reinterpret_cast<shared_type*>(ptr) = boost::accumulator::mean(acc);
-   //       }
-   //
-   //       static constexpr size_t size()
-   //       {
-   //          return sizeof(shared_type);
-   //       }
-   //
-   //       static const char* const stat_name = "mean";
-   //       static dumpStat(void* ptr)
-   //       {
-   //          std::cout << *reinterpret_cast<shared_type*>(ptr);
-   //       }
-   //   };
-   template <typename AccumStatType, typename Tag>
-   struct traits;
-}
 
 namespace detail
 {

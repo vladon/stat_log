@@ -244,12 +244,6 @@ struct is_serialization_deferred<StatArray<Size, Repr>>
    static constexpr bool value = is_serialization_deferred<Repr>::value;
 };
 
-template <size_t Size, typename Repr>
-struct is_serialization_deferred<stat_array_detail::StatArrayImpl<Size, Repr, true>>
-{
-   static constexpr bool value = is_serialization_deferred<Repr>::value;
-};
-
 template <int Size, typename Repr>
 struct num_stat_dimensions<StatArray<Size, Repr>>
 {

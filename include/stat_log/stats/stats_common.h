@@ -130,22 +130,14 @@ struct is_serialization_deferred<detail::SimpleStat<Repr, WritePolicy>>
    static constexpr bool value = false;
 };
 
-template <typename StatType,
-   typename std::enable_if<
-      true == is_serialization_deferred<StatType>::value
-   >::type* = nullptr
->
-void doSerializeStat(StatType& stat, void* ptr)
+template <typename StatType>
+void doSerializeStat(StatType& stat, void* ptr, std::true_type)
 {
    stat.serialize(ptr);
 }
 
-template <typename StatType,
-   typename = std::enable_if_t<
-      false == is_serialization_deferred<StatType>::value
-   >
->
-void doSerializeStat(StatType& stat, void* ptr)
+template <typename StatType>
+void doSerializeStat(StatType& stat, void* ptr, std::false_type)
 {
    //Do nothing if this stat does not require
    // deferred serialization.
@@ -163,7 +155,8 @@ struct OperationalStatProxy : detail::StatProxyBase<StatType, true>
    void serialize()
    {
       using StatImpl = typename detail::StatProxyBase<StatType, true>::StatImpl;
-      doSerializeStat(static_cast<StatImpl&>(*this), this->shared_ptr);
+      doSerializeStat(static_cast<StatImpl&>(*this), this->shared_ptr,
+            std::integral_constant<bool, is_serialization_deferred<StatType>::value>{});
    }
 };
 

@@ -252,11 +252,5 @@ struct is_serialization_deferred<Accumulator<AccumSet>>
    static constexpr bool value = true;
 };
 
-template <typename AccumSet>
-struct is_serialization_deferred<detail::AccumOp<AccumSet>>
-{
-   static constexpr bool value = true;
-};
-
 }
 

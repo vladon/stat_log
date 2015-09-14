@@ -106,31 +106,14 @@ namespace stat_log
    struct stat_tag_to_type<sis::PROP_DELAY_TAG>
    {
       using type = StatArray<max_nbrs,
-               #if 1
                Accumulator<
-#if 1
                   stat_log::HistogramCount<
                      double,
                      20, //start bin
                      400, //stop bin
                      8 //num_bits
                   >
-#else
-                  ba::accumulator_set<
-                        double
-                        , ba::stats<
-                           ba::tag::count
-                           , ba::tag::min
-                           , ba::tag::max
-                           , ba::tag::mean
-                        >
-                  >
-#endif
                >
-               #else
-                  int
-#endif
-
             >;
    };
 

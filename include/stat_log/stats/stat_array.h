@@ -112,6 +112,7 @@ namespace stat_array_detail
          auto& shared_array = *reinterpret_cast<shared_type*>(ptr);
          if(!is_substat)
             printHeader(cmd, tag_info);
+#if 0
          if(printingRequired(cmd))
          {
             if(!is_substat)
@@ -122,19 +123,28 @@ namespace stat_array_detail
             }
             std::cout << std::dec << "[";
          }
+#endif
+         if(cmd == StatCmd::PRINT_STAT_TYPE)
+         {
+            std::cout << "STAT_ARRAY" << std::endl;
+            //TODO: print type and dimensions
+            return;
+         }
+
          for(size_t i = 0; i < Size; ++i)
          {
+            if(cmd == StatCmd::DUMP_STAT)
+            {
+               std::cout << i << ": ";
+            }
             TheTraits::doStatCommand(
                   (void*)&shared_array[i],
                   statEntries[i],
                   cmd, arg, tag_info, true);
 
-            if(printingRequired(cmd))
+            if(cmd == StatCmd::DUMP_STAT)
             {
-               if(i < Size - 1)
-                  std::cout << ", ";
-               else
-                  std::cout << "]";
+               std::cout << std::endl;
             }
          }
          if(!is_substat)
@@ -176,6 +186,7 @@ namespace stat_array_detail
          //TODO: handle all commands
          if(!is_substat)
             printHeader(cmd, tag_info);
+         #if 0
          if(printingRequired(cmd))
          {
             std::cout << std::endl;
@@ -185,17 +196,22 @@ namespace stat_array_detail
             }
             std::cout << std::dec << "[";
          }
+         #endif
+
+         if(cmd == StatCmd::PRINT_STAT_TYPE)
+         {
+            std::cout << "STAT_ARRAY" << std::endl;
+            //TODO: print type and dimensions
+            return;
+         }
          for(size_t i = 0; i < Size; ++i)
          {
+            if(cmd == StatCmd::DUMP_STAT)
+            {
+               std::cout << i << ",";
+            }
             auto child_ptr = reinterpret_cast<void*>(&theArray[i]);
             statEntries[i].doStatCommand(child_ptr, cmd, arg, tag_info, true);
-            if(printingRequired(cmd))
-            {
-               if(i < Size - 1)
-                  std::cout << ",\n ";
-               else
-                  std::cout << "]";
-            }
          }
          if(!is_substat)
             printFooter(cmd);

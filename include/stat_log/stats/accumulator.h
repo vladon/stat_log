@@ -31,21 +31,21 @@ namespace accumulator
    //   template <>
    //   struct traits<AccumulatorSetType, boost::accumulator::tag::mean>
    //   {
-   //       using SharedType = typename AccumulatorSetType::sample_type;
+   //       using shared_type = typename AccumulatorSetType::sample_type;
    //       static void serialize(AccumulatorSetType& acc, char* ptr)
    //       {
-   //          *reinterpret_cast<SharedType*>(ptr) = boost::accumulator::mean(acc);
+   //          *reinterpret_cast<shared_type*>(ptr) = boost::accumulator::mean(acc);
    //       }
    //
    //       static constexpr size_t size()
    //       {
-   //          return sizeof(SharedType);
+   //          return sizeof(shared_type);
    //       }
    //
    //       static const char* const stat_name = "mean";
    //       static dumpStat(void* ptr)
    //       {
-   //          std::cout << *reinterpret_cast<SharedType*>(ptr);
+   //          std::cout << *reinterpret_cast<shared_type*>(ptr);
    //       }
    //   };
    template <typename AccumStatType, typename Tag>
@@ -95,7 +95,7 @@ namespace detail
       //Define -- using MPL magic -- an array with a size equal to the
       // sum of the feature handlers' shared_types _plus_ the size of
       // the control word.
-      using SharedType = std::array<char,
+      using shared_type = std::array<char,
                               boost::mpl::accumulate<
                                    feature_handlers_t
                                    , boost::mpl::int_<0>
@@ -110,7 +110,7 @@ namespace detail
    {
       using BaseClass = AccumBase<AccumSet>;
       using sample_type = typename AccumSet::sample_type;
-      using SharedType = typename BaseClass::SharedType;
+      using shared_type = typename BaseClass::shared_type;
       using feature_handlers = typename BaseClass::feature_handlers;
       using control_word = typename BaseClass::control_word;
 
@@ -133,7 +133,7 @@ namespace detail
       {
          std::unique_lock<std::mutex> lock(mtx);
          auto ptr = reinterpret_cast<char*>(shared_ptr);
-         ptr += sizeof(SharedType) - sizeof(control_word);
+         ptr += sizeof(shared_type) - sizeof(control_word);
          auto control_word_ptr = reinterpret_cast<control_word*>(ptr);
 
          //Check the control word to see if we need to reset the
@@ -156,7 +156,8 @@ namespace detail
    struct AccumControl : AccumBase<AccumSet>
    {
       using BaseClass = AccumBase<AccumSet>;
-      using SharedType = typename BaseClass::SharedType;
+      using sample_type = typename AccumSet::sample_type;
+      using shared_type = typename BaseClass::shared_type;
       using feature_handlers = typename BaseClass::feature_handlers;
       using control_word = typename BaseClass::control_word;
 
@@ -224,7 +225,7 @@ namespace detail
          }
          else if(cmd == StatCmd::CLEAR_STAT)
          {
-            ptr += sizeof(SharedType) - sizeof(control_word);
+            ptr += sizeof(shared_type) - sizeof(control_word);
             auto control_word_ptr = reinterpret_cast<control_word*>(ptr);
             *control_word_ptr = 1;
          }

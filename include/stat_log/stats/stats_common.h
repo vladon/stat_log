@@ -49,7 +49,7 @@ namespace detail
 
    struct ControlStatBase
    {
-      using SharedType = void;
+      using shared_type = void;
       static void doStatCommand(
             void* shared_ptr,
             StatCmd cmd,
@@ -69,10 +69,11 @@ namespace detail
    template <typename Repr, typename WritePolicy>
    struct SimpleStat
    {
-      using SharedType = Repr;
-      static void write(void* shared_ptr, Repr value)
+      using shared_type = Repr;
+      using sample_type = shared_type;
+      static void write(void* shared_ptr, sample_type value)
       {
-         auto ptr = reinterpret_cast<Repr*>(shared_ptr);
+         auto ptr = reinterpret_cast<shared_type*>(shared_ptr);
          WritePolicy::write(ptr, value);
       }
 
@@ -83,7 +84,7 @@ namespace detail
             const TagInfo& tag_info,
             bool is_substat)
       {
-         auto ptr = reinterpret_cast<Repr*>(shared_ptr);
+         auto ptr = reinterpret_cast<shared_type*>(shared_ptr);
          //TODO: handle all commands
          auto& val = *ptr;
          if(!is_substat)
@@ -110,16 +111,16 @@ namespace detail
    {
       using StatImpl =
          typename stat_type_to_impl<StatType, IsOperational>::type;
-      using SharedType = typename StatImpl::SharedType;
-      SharedType* shared_ptr = nullptr;
+      using shared_type = typename StatImpl::shared_type;
+      shared_type* shared_ptr = nullptr;
       void setSharedPtr(void* ptr)
       {
-         shared_ptr = reinterpret_cast<SharedType*>(ptr);
+         shared_ptr = reinterpret_cast<shared_type*>(ptr);
       }
 
       static constexpr size_t getSharedSize()
       {
-         return sizeof(SharedType);
+         return sizeof(shared_type);
       }
    };
 }

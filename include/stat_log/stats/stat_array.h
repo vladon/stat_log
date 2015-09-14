@@ -68,31 +68,26 @@ namespace stat_array_detail
       using TheTraits = typename stat_array_detail::traits<Repr, IsOperational>;
       using stat_type = typename TheTraits::stat_type;
       using StatEntries = std::array<stat_type, Size>;
-      using PerEntrySharedType = typename stat_type::SharedType;
-      using SharedType = std::array<PerEntrySharedType, Size>;
+      using PerEntrySharedType = typename stat_type::shared_type;
+      using shared_type = std::array<PerEntrySharedType, Size>;
+      using sample_type = typename stat_type::sample_type;
 
       StatEntries statEntries;
 
       //The actual statistic write :)
-      template <typename T>
-      void write_idx(void* ptr, int idx, T value)
+      void write_idx(void* ptr, int idx, sample_type value)
       {
-         auto& shared_array = *reinterpret_cast<SharedType*>(ptr);
+         auto& shared_array = *reinterpret_cast<shared_type*>(ptr);
          auto this_ptr = reinterpret_cast<void*>(&shared_array[idx]);
          statEntries[idx].write(this_ptr, value);
       }
 
       //We "eat" the superfluous indices here:
-      #if 0
-      //TODO: This doesn't work if we have the templatized "value" arg
-      //for the above write_idx ...
       template <typename ...Args>
       void write_idx (void* ptr, int idx, int idx_ignore, Args... args)
       {
          write_idx(ptr, idx, args...);
       }
-      #endif
-
 
       //If passed more than one index, we only look at the first and ignore the rest.
       template <typename ...Args>
@@ -104,7 +99,7 @@ namespace stat_array_detail
       //Called via the deferred processing thread
       void serialize(void* ptr)
       {
-         auto& shared_array = *reinterpret_cast<SharedType*>(ptr);
+         auto& shared_array = *reinterpret_cast<shared_type*>(ptr);
          for(size_t i = 0; i < Size; ++i)
          {
             statEntries[i].serialize((void*)&shared_array[i]);
@@ -114,7 +109,7 @@ namespace stat_array_detail
       void doStatCommand(void* ptr, StatCmd cmd,
             boost::any& arg, const TagInfo& tag_info, bool is_substat)
       {
-         auto& shared_array = *reinterpret_cast<SharedType*>(ptr);
+         auto& shared_array = *reinterpret_cast<shared_type*>(ptr);
          if(!is_substat)
             printHeader(cmd, tag_info);
          if(printingRequired(cmd))
@@ -152,14 +147,14 @@ namespace stat_array_detail
    struct StatArrayImpl<Size, StatArrayImpl<M, Repr, IsOperational>, IsOperational>
    {
       using EmbeddedStatArray = StatArrayImpl<M,Repr,IsOperational>;
-      using SharedType = std::array<typename EmbeddedStatArray::SharedType, Size>;
+      using shared_type = std::array<typename EmbeddedStatArray::shared_type, Size>;
 
       std::array<EmbeddedStatArray, Size> statEntries;
 
       template <typename ...Args>
       void write(void* ptr, int idx, Args... args)
       {
-         auto& theArray = *reinterpret_cast<SharedType*>(ptr);
+         auto& theArray = *reinterpret_cast<shared_type*>(ptr);
          auto child_ptr = reinterpret_cast<void*>(&theArray[idx]);
          statEntries[idx].write(child_ptr, args...);
       }
@@ -167,7 +162,7 @@ namespace stat_array_detail
       //Called via the deferred processing thread
       void serialize(void* ptr)
       {
-         auto& shared_array = *reinterpret_cast<SharedType*>(ptr);
+         auto& shared_array = *reinterpret_cast<shared_type*>(ptr);
          for(size_t i = 0; i < Size; ++i)
          {
             statEntries[i].serialize((void*)&shared_array[i]);
@@ -177,7 +172,7 @@ namespace stat_array_detail
       void doStatCommand(void* ptr, StatCmd cmd,
             boost::any& arg, const TagInfo& tag_info, bool is_substat)
       {
-         auto& theArray = *reinterpret_cast<SharedType*>(ptr);
+         auto& theArray = *reinterpret_cast<shared_type*>(ptr);
          //TODO: handle all commands
          if(!is_substat)
             printHeader(cmd, tag_info);

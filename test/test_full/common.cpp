@@ -46,6 +46,8 @@ using LogRet = stat_log::shared_mem_logger_retriever;
  *********************************/
 namespace stat_log
 {
+   namespace ba = boost::accumulators;
+   constexpr int max_nbrs = 10;
    //Default stat
    template <typename Tag, class Enable>
    struct stat_tag_to_type
@@ -53,52 +55,110 @@ namespace stat_log
       using type = SimpleCounter<int>;
    };
 
+   //Mac: Frags sent: Histogram of fragment sizes
    template <>
-   struct stat_tag_to_type<sis::MAC_PKTS_DOWN_TAG>
+   struct stat_tag_to_type<mac::FRAGS_SENT_TAG>
    {
-      using ChildStat = int;
-      using type = StatArray<4, StatArray<6, ChildStat>>;
+      using type = Accumulator<
+         stat_log::HistogramCount<
+            int,
+            1, //start bin
+            1500, //stop bin
+            10 //num_bits
+         >
+      >;
    };
 
-   //Default "HwIntf" stat
-   template <typename Tag>
-   struct stat_tag_to_type<Tag,
-               std::enable_if_t<
-                 std::is_base_of<hw_intf::HwIntfBase, Tag>::value
+   //Mac: Frags rcvd: summary statistics of fragment sizes:
+   //  count, min, max, mean
+   template <>
+   struct stat_tag_to_type<mac::FRAGS_RCVD_TAG>
+   {
+      using type = Accumulator<
+         ba::accumulator_set<
+               double
+               , ba::stats<
+                  ba::tag::count
+                  , ba::tag::min
+                  , ba::tag::max
+                  , ba::tag::mean
                >
             >
-   {
-      using type = SimpleCounter<int>;
-   };
-
-   namespace ba = boost::accumulators;
-#if 1
-#if 1
-   using TheAccum = stat_log::HistogramCount<
-      double,
-      1, //start bin
-      10,//stop bin
-      9 //num bins
          >;
-#else
-   using TheAccum = ba::accumulator_set<
-      double
-      , ba::stats<
-      ba::tag::count
-      , ba::tag::min
-      , ba::tag::max
-      , ba::tag::mean
-      >
-      >;
-#endif
-
-   //Complete specialization for the HW FAULT
-   template <>
-   struct stat_tag_to_type<hw_intf::MISC_FPGA_FAULT_TAG>
-   {
-      using type = Accumulator<TheAccum>;
    };
-#endif
+
+   //Mac: tx power level: array of power levels (ints)
+   template <>
+   struct stat_tag_to_type<mac::TX_POWER_LEVEL_TAG>
+   {
+      using type = StatArray<max_nbrs, SimpleStatus<int>>;
+   };
+
+   //Mac: rx power level: array of received powers in dB (doubles)
+   template <>
+   struct stat_tag_to_type<mac::RX_POWER_LEVEL_TAG>
+   {
+      using type = StatArray<max_nbrs, SimpleStatus<double>>;
+   };
+
+   //Sis: prop delay: per-nbr density histogram of delays
+   template <>
+   struct stat_tag_to_type<sis::PROP_DELAY_TAG>
+   {
+      using type = StatArray<max_nbrs,
+               Accumulator<
+                  stat_log::HistogramCount<
+                     double,
+                     20, //start bin
+                     400, //stop bin
+                     8 //num_bits
+                  >
+               >
+            >;
+   };
+
+   //Sis: channel chality: per-nbr, per-frequency channel quality enumeration
+   template <>
+   struct stat_tag_to_type<sis::CHANNEL_QUALITY_TAG>
+   {
+      //4 possible stati
+      using type = StatArray<max_nbrs,
+                                StatArray<4,
+                                    SimpleStatus<int>
+                                 >
+                            >;
+   };
+
+   //Sis: frame rx status: array of counters (per rx status)
+   template <>
+   struct stat_tag_to_type<sis::FRAME_RX_STATUS_TAG>
+   {
+      //5 possible stati
+      using type = StatArray<5, int>;
+   };
+
+   //Sis: link status: per-nbr link status indicator (int)
+   template <>
+   struct stat_tag_to_type<sis::LINK_STATUS_TAG>
+   {
+      using type = StatArray<max_nbrs, SimpleStatus<int>>;
+   };
+
+   //HwIntf: fault: array of counters (per each fault type)
+   template <>
+   struct stat_tag_to_type<hw_intf::FPGA_FAULT_TAG>
+   {
+      //5 fault types
+      using type = StatArray<5, int>;
+   };
+
+   //HwIntf: interrupt: array of counters (per each interrupt)
+   template <>
+   struct stat_tag_to_type<hw_intf::INTERRUPT_TAG>
+   {
+      //3 interrupt types
+      using type = StatArray<3, int>;
+   };
 }
 
 /*********************************
@@ -184,9 +244,25 @@ namespace stat_log
    }
 
    //EXPLICIT TEMPLATE INSTANTIATIONS
-   template void writeStat<mac::IP_PKTS_UP_TAG>(int val);
-   template void writeStat<sis::MAC_PKTS_DOWN_TAG>(int proto_idx, int prio_idx, int val);
-   template void writeStat<hw_intf::MISC_FPGA_FAULT_TAG>(int val);
+   //MAC
+   template void writeStat<mac::IP_PKTS_SENT_TAG>(int val);
+   template void writeStat<mac::IP_PKTS_RCVD_TAG>(int val);
+   template void writeStat<mac::FRAGS_SENT_TAG>(int val);
+   template void writeStat<mac::FRAGS_RCVD_TAG>(int val);
+   template void writeStat<mac::TX_POWER_LEVEL_TAG>(int idx, double val);
+   template void writeStat<mac::RX_POWER_LEVEL_TAG>(int idx, double val);
+
+   //SIS
+   template void writeStat<sis::PROP_DELAY_TAG>(int nbr_idx, double delay_us);
+   template void writeStat<sis::CHANNEL_QUALITY_TAG>(int nbr_idx, int freq_idx, double qual);
+   template void writeStat<sis::FRAME_RX_STATUS_TAG>(int rx_status_enum, int val);
+   template void writeStat<sis::LINK_STATUS_TAG>(int nbr_idx, int val);
+
+   //HW_INTF
+   template void writeStat<hw_intf::FPGA_FAULT_TAG>(int fault_idx, int val);
+   template void writeStat<hw_intf::BYTES_SENT_TAG>(int val);
+   template void writeStat<hw_intf::BYTES_RCVD_TAG>(int val);
+   template void writeStat<hw_intf::INTERRUPT_TAG>(int interrupt_idx, int val);
 
    template LogGenProxy logger<hw_intf::HW_INTF_LOG>(LogLevel ll);
    template LogGenProxy hexDumper<hw_intf::HW_INTF_LOG>(LogLevel ll);

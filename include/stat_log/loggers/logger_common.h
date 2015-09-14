@@ -22,37 +22,37 @@ namespace stat_log
 
       struct LogOpProxy
       {
-         using SharedType = LogControlStorage;
-         SharedType* shared_ptr = nullptr;
+         using shared_type = LogControlStorage;
+         shared_type* shared_ptr = nullptr;
          void setSharedPtr(void* ptr)
          {
-            shared_ptr = reinterpret_cast<SharedType*>(ptr);
+            shared_ptr = reinterpret_cast<shared_type*>(ptr);
          }
 
          unsigned char getLevel(int log_idx)
          {
-            assert(log_idx <= (int)SharedType{}.size());
+            assert(log_idx <= (int)shared_type{}.size());
             return (*shared_ptr)[log_idx];
          }
 
          static constexpr size_t getSharedSize()
          {
-            return sizeof(SharedType);
+            return sizeof(shared_type);
          }
       };
 
       struct LogControlProxy
       {
-         using SharedType = LogControlStorage;
-         SharedType* shared_ptr = nullptr;
+         using shared_type = LogControlStorage;
+         shared_type* shared_ptr = nullptr;
          void setSharedPtr(void* ptr)
          {
-            shared_ptr = reinterpret_cast<SharedType*>(ptr);
+            shared_ptr = reinterpret_cast<shared_type*>(ptr);
          }
 
          static constexpr size_t getSharedSize()
          {
-            return sizeof(SharedType);
+            return sizeof(shared_type);
          }
 
          void doCommand(StatCmd cmd, boost::any& cmd_arg, const TagInfo& tag_info)
@@ -64,7 +64,7 @@ namespace stat_log
             {
                auto logLevelCmd = boost::any_cast<LogLevelCommand>(cmd_arg);
                int log_idx = logLevelCmd.logger_idx;
-               if(log_idx >= (int)SharedType{}.size())
+               if(log_idx >= (int)shared_type{}.size())
                {
                   std::cout << "Invalid log index = " << log_idx << std::endl;
                   std::exit(1);

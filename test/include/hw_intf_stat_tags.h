@@ -8,8 +8,10 @@ struct HwIntfBase {};
 SL_MAKE_TAGS_NAMED_BASE(
       StatTags,
       HwIntfBase,
-      (MISC_FPGA_FAULT)
-      (BUFFER_OVERFLOW)
+      (FPGA_FAULT)
+      (BYTES_SENT)
+      (BYTES_RCVD)
+      (INTERRUPT)
 );
 
 struct HW_INTF_STATS

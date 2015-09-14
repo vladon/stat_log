@@ -70,13 +70,13 @@ namespace stat_log
       template <typename AccumSet>
       struct traits<AccumSet, boost::accumulators::tag::histogram_count>
       {
-         using SharedType = std::array<
+         using shared_type = std::array<
             std::tuple<typename AccumSet::sample_type, std::size_t>, // (bin_start, count in bin)
             AccumSet::num_hist_bins>;
          static void serialize(AccumSet& acc, char* ptr)
          {
             const auto& hist = boost::accumulators::histogram_count(acc.acc);
-            auto hist_shared_ptr = reinterpret_cast<SharedType*>(ptr);
+            auto hist_shared_ptr = reinterpret_cast<shared_type*>(ptr);
             for(std::size_t i = 0; i < hist_shared_ptr->size(); ++i)
             {
                auto& tup = (*hist_shared_ptr)[i];
@@ -88,14 +88,14 @@ namespace stat_log
 
          static constexpr size_t size()
          {
-            return sizeof(SharedType);
+            return sizeof(shared_type);
          }
 
          static constexpr const char* stat_name = "count histogram";
 
          static void dumpStat(void* ptr)
          {
-            auto hist_ptr = reinterpret_cast<SharedType*>(ptr);
+            auto hist_ptr = reinterpret_cast<shared_type*>(ptr);
             for(std::size_t i = 0; i < hist_ptr->size(); ++i)
             {
                const auto& tup = (*hist_ptr)[i];
@@ -108,13 +108,13 @@ namespace stat_log
       template <typename AccumSet>
       struct traits<AccumSet, boost::accumulators::tag::histogram_density>
       {
-         using SharedType = std::array<
+         using shared_type = std::array<
             std::tuple<typename AccumSet::sample_type, double>, // (bin_start, probability)
             AccumSet::num_hist_bins>;
          static void serialize(AccumSet& acc, char* ptr)
          {
             const auto& hist = boost::accumulators::histogram_density(acc.acc);
-            auto hist_shared_ptr = reinterpret_cast<SharedType*>(ptr);
+            auto hist_shared_ptr = reinterpret_cast<shared_type*>(ptr);
             for(std::size_t i = 0; i < hist_shared_ptr->size(); ++i)
             {
                auto& tup = (*hist_shared_ptr)[i];
@@ -125,14 +125,14 @@ namespace stat_log
 
          static constexpr size_t size()
          {
-            return sizeof(SharedType);
+            return sizeof(shared_type);
          }
 
          static constexpr const char* stat_name = "density histogram";
 
          static void dumpStat(void* ptr)
          {
-            auto hist_ptr = reinterpret_cast<SharedType*>(ptr);
+            auto hist_ptr = reinterpret_cast<shared_type*>(ptr);
             for(std::size_t i = 0; i < hist_ptr->size(); ++i)
             {
                const auto& tup = (*hist_ptr)[i];

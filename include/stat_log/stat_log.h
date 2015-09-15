@@ -2,6 +2,7 @@
 #include <stat_log/util/stat_log_impl.h>
 #include <stat_log/util/component_commander.h>
 #include <stat_log/stats/stats_common.h>
+#include <stat_log/loggers/logger_common.h>
 #include <stat_log/util/utils.h>
 
 #include <boost/any.hpp>
@@ -37,7 +38,7 @@ struct LogStatOperational :
          stat_log::LogStatOperational>; //Note the fully qualified name is required
                                         // due a bug in the clang compiler
    template <typename LogTag>
-   LogGenProxy getLog(std::size_t log_idx, int log_level)
+   LogGenProxy getLog(LogLevel log_level = INFO, std::size_t log_idx = 0)
    {
       assert(log_idx <= loggers.size());
       auto& log_hdl = detail::getHandle<LogTag>(this->theLogs);
@@ -46,34 +47,10 @@ struct LogStatOperational :
       auto cur_log_level = log_hdl.getLevel(log_idx);
       return LogGenProxy {
          *loggers[log_idx],
-         log_level >= cur_log_level,
+         static_cast<decltype(cur_log_level)>(log_level) >= cur_log_level,
          LogHdlType::tag_node::name,
          LogLevelNames[log_level]
       };
-   }
-
-   template <typename LogTag>
-   LogGenProxy getDebugLog(std::size_t log_idx = 0)
-   {
-      return getLog<LogTag>(log_idx, 0);
-   }
-
-   template <typename LogTag>
-   LogGenProxy getInfoLog(std::size_t log_idx = 0)
-   {
-      return getLog<LogTag>(log_idx, 1);
-   }
-
-   template <typename LogTag>
-   LogGenProxy getAlertLog(std::size_t log_idx = 0)
-   {
-      return getLog<LogTag>(log_idx, 2);
-   }
-
-   template <typename LogTag>
-   LogGenProxy getErrorLog(std::size_t log_idx = 0)
-   {
-      return getLog<LogTag>(log_idx, 3);
    }
 
    template <typename StatTag, typename... Args>

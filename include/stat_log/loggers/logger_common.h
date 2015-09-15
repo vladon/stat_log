@@ -8,6 +8,7 @@
 #include <ostream>
 #include <iostream>
 #include <sstream>
+#include <memory>
 #include <assert.h>
 
 namespace stat_log
@@ -17,6 +18,14 @@ namespace stat_log
    {{
        "DEBUG", "INFO", "ALERT", "ERROR"
    }};
+
+   enum LogLevel
+   {
+      DEBUG = 0,
+      INFO,
+      ALERT,
+      ERROR
+   };
 
    namespace detail
    {

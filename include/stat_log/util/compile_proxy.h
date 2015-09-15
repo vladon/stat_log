@@ -18,21 +18,9 @@
 /*
 using OpStat = LogStatOperational<YourStatHierarchy>;
 template <typename Tag>
-inline LogGenProxy& logCommon(LogLevel ll, int log_idx)
+inline LogGenProxy& logCommon(LogLevel ll)
 {
-   switch(ll)
-   {
-      case LogLevel::DEBUG:
-         return getOpStat<OpStat>().getDebugLog<Tag>(log_idx);
-      case LogLevel::INFO:
-         return getOpStat<OpStat>().getInfoLog<Tag>(log_idx);
-      case LogLevel::ALERT:
-         return getOpStat<OpStat>().getAlertLog<Tag>(log_idx);
-      case LogLevel::ERROR:
-         return getOpStat<OpStat>().getErrorLog<Tag>(log_idx);
-   }
-   getOpStat<OpStat>().getErrorLog<Tag>(0) << "Invalid log level!";
-   return *reinterpret_cast<LogGenProxy*>(nullptr);
+   return getOpStat<OpStat>().getLog<Tag>(0, ll) << "Invalid log level!";
 }
 template <typename Tag>
 LogGenProxy log(LogLevel ll)
@@ -62,14 +50,6 @@ namespace stat_log
 {
    template<typename Tag, typename ...Args>
    void writeStat(Args... args);
-
-   enum class LogLevel
-   {
-      DEBUG,
-      INFO,
-      ALERT,
-      ERROR
-   };
 
    template<typename Tag>
    LogGenProxy logger(LogLevel ll = LogLevel::INFO);

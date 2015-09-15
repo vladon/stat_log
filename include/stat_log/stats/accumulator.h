@@ -141,7 +141,6 @@ namespace detail
          auto ptr = reinterpret_cast<char*>(shared_ptr);
          std::stringstream ss_title;
          std::stringstream ss_entry;
-         //TODO: handle all commands
          if(cmd == StatCmd::DUMP_STAT)
          {
             size_t max_width = 0;
@@ -155,7 +154,6 @@ namespace detail
             });
 
             size_t max_pad = max_width + 2;
-            // size_t total_width = num_fields * max_pad;
 
             ss_title.flags(std::ios::left);
             ss_entry.flags(std::ios::left);

@@ -127,8 +127,6 @@ void parseCommandLineArgs(int argc, char** argv,
          .run();
    po::store(parsed, vm);
 
-   // setStartingDepth(TagNode::depth);
-
    if(vm["show-tags"].as<bool>())
    {
       cmd = StatCmd::PRINT_TAG;
@@ -253,28 +251,4 @@ getHeadTail(std::string s, char delim)
    return ret;
 }
 
-
-#if 0
-void printHeader(StatCmd cmd, const TagInfo& tag_info)
-{
-   if(printingRequired(cmd))
-   {
-      detail::indent(tag_info.depth - starting_tag_depth);
-      std::cout << tag_info.name << std::endl;
-      if(cmd != StatCmd::PRINT_TAG)
-      {
-         detail::indent(tag_info.depth - starting_tag_depth);
-         std::cout << "  ";
-      }
-   }
-}
-
-void printFooter(StatCmd cmd)
-{
-   if(printingRequired(cmd) && cmd != StatCmd::PRINT_TAG)
-   {
-      std::cout << std::endl;
-   }
-}
-#endif
 }

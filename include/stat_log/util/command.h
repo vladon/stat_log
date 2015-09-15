@@ -19,22 +19,6 @@ enum class StatCmd
    PRINT_TAG,
 };
 
-#if 0
-inline bool printingRequired(StatCmd cmd)
-{
-   switch(cmd)
-   {
-      case StatCmd::PRINT_STAT_TYPE:
-      case StatCmd::DUMP_STAT:
-      case StatCmd::LOG_LEVEL:
-      case StatCmd::PRINT_TAG:
-         return true;
-      default:
-         return false;
-   }
-}
-#endif
-
 inline bool isStatisticCommand(StatCmd cmd)
 {
    switch(cmd)

@@ -200,7 +200,6 @@ namespace detail{
                typename stat_type_to_impl<T, true>::type,
                true>,
             true>;
-            // stat_array_detail::StatArrayImpl<M,T,true>, true>;
    };
 
    template <size_t N, typename T>
@@ -217,7 +216,6 @@ namespace detail{
                typename stat_type_to_impl<T, false>::type,
                false>,
             false>;
-            // stat_array_detail::StatArrayImpl<M,T,false>, false>;
    };
 }
 

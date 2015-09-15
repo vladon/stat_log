@@ -61,7 +61,6 @@ namespace detail
             StatCmdOutput& stat_output)
       {
          auto ptr = reinterpret_cast<shared_type*>(shared_ptr);
-         //TODO: handle all commands
          auto& val = *ptr;
          if(cmd == StatCmd::DUMP_STAT)
          {

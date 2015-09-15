@@ -3,6 +3,7 @@
 #include <stat_log/util/component_commander.h>
 #include <stat_log/stats/stats_common.h>
 #include <stat_log/loggers/logger_common.h>
+#include <stat_log/util/printer.h>
 #include <stat_log/util/utils.h>
 
 #include <boost/any.hpp>
@@ -133,9 +134,11 @@ struct LogStatControl :
    {
       std::vector<std::string> component_strings;
       StatCmd cmd = StatCmd::NO_CMD;
+      PrintOptions print_options;
       boost::any cmd_arg;
 
-      parseCommandLineArgs(argc, argv, component_strings, cmd, cmd_arg);
+      parseCommandLineArgs(argc, argv, component_strings, cmd, cmd_arg, print_options);
+      printer.setCommand(cmd, print_options);
 
       for(auto& component_str : component_strings)
       {
@@ -151,7 +154,25 @@ struct LogStatControl :
                componentCommander<LogTagHierarchy>(*this, component_str, cmd, cmd_arg);
          }
       }
-      //TODO: kick the "statPrinter" here
+   }
+
+   void showOutput()
+   {
+      printer.showOutput();
+   }
+
+   template <typename StatTagNode>
+   std::enable_if_t<
+      detail::is_found_in_list
+      <
+         typename BaseClass::TheStats,
+         detail::matches_tag<typename StatTagNode::tag>
+      >::value
+   >
+   setStatDisplayArgs(StatDisplayOptions& stat_display_options)
+   {
+      using Tag = typename StatTagNode::tag;
+      printer.setStatDisplayArgs(std::type_index(typeid(Tag)), stat_display_options);
    }
 
    template <typename StatTagNode>
@@ -165,9 +186,14 @@ struct LogStatControl :
    sendCommand(StatCmd cmd, boost::any& cmd_arg)
    {
       using Tag = typename StatTagNode::tag;
+      TagInfo tag_info{
+         StatTagNode::name,
+         std::type_index(typeid(Tag)),
+         StatTagNode::depth};
+
       StatCmdOutput stat_output;
       detail::getHandle<Tag>(this->theStats).doCommand(cmd, cmd_arg, stat_output);
-      // statPrinter.addStatOutput(cmd, std::type_index(typeid(Tag)), stat_output);
+      printer.addStatOutput(tag_info, std::move(stat_output));
    }
 
    template <typename LogTagNode>
@@ -181,18 +207,14 @@ struct LogStatControl :
    sendCommand(StatCmd cmd, boost::any& cmd_arg)
    {
       using Tag = typename LogTagNode::tag;
-      #if 0
       TagInfo tag_info{
          LogTagNode::name,
          std::type_index(typeid(Tag)),
-         LogTagNode::depth,
-         false};
-      #endif
+         LogTagNode::depth};
 
       std::string log_output;
       detail::getHandle<Tag>(this->theLogs).doCommand(cmd, cmd_arg, log_output);
-      //TODO: how should we pass the log-levels to the printer?
-      // statPrinter.addStatOutput(cmd, std::type_index(typeid(Tag)), stat_output);
+      printer.addLogOutput(tag_info, std::move(log_output));
    }
 
    void outputLog(boost::any& log_args)
@@ -212,6 +234,8 @@ struct LogStatControl :
       std::exit(0);
    }
 
+
+
    void doInit()
    {}
 
@@ -223,7 +247,8 @@ struct LogStatControl :
       loggers.push_back(logger);
       return loggers.size() - 1;
    }
-
+private:
+   Printer printer;
    std::vector<std::shared_ptr<LoggerRetriever>> loggers;
 };
 

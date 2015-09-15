@@ -62,7 +62,8 @@ template <typename TagNode, typename StatLogControl,
 void componentCommander(StatLogControl& stat_log_control,
       std::string& component_name, StatCmd cmd, boost::any& cmd_arg)
 {
-   detail::processCommand<TagNode>(stat_log_control, cmd, cmd_arg);
+   if(component_name == TagNode::name || component_name.empty())
+      detail::processCommand<TagNode>(stat_log_control, cmd, cmd_arg);
 }
 
 //For non-leaf nodes

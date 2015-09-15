@@ -113,13 +113,10 @@ namespace stat_array_detail
          if(cmd == StatCmd::PRINT_STAT_TYPE)
          {
             std::stringstream ss;
-            std::cout << "STAT_ARRAY of type: " << std::endl;
-            stat_output.dimensionSizes.push_back(Size);
             statEntries[0].doStatCommand(ptr, cmd, arg, stat_output);
-            ss << "STAT_ARRAY of type: " <<  stat_output.entryTitle
-               << ", size = " << Size;
-            stat_output.entries.clear();
-            stat_output.entries.push_back(ss.str());
+            ss << "STAT_ARRAY [" <<  stat_output.entryTitle
+               << "] size = " << Size;
+            stat_output.entryTitle = ss.str();
             return;
          }
 
@@ -167,23 +164,23 @@ namespace stat_array_detail
          stat_output.dimensionSizes.push_back(Size);
          if(cmd == StatCmd::PRINT_STAT_TYPE)
          {
-            statEntries[0].doStatCommand(ptr, cmd, arg, stat_output);
             std::stringstream ss;
-            ss << "STAT_ARRAY of type: " <<  stat_output.entryTitle
-               << ", sizes = ";
-            for(auto d: stat_output.dimensionSizes)
-            {
-               ss << d << " ";
-            }
-            stat_output.entries.clear();
-            stat_output.entries.push_back(ss.str());
+            statEntries[0].doStatCommand(ptr, cmd, arg, stat_output);
+            ss << "STAT_ARRAY [" <<  stat_output.entryTitle
+               << "] size = " << Size;
+            stat_output.entryTitle = ss.str();
             return;
          }
+         auto dimSizes = stat_output.dimensionSizes;
          for(size_t i = 0; i < Size; ++i)
          {
             auto child_ptr = reinterpret_cast<void*>(&theArray[i]);
             statEntries[i].doStatCommand(child_ptr, cmd, arg, stat_output);
+            if(i == 0)
+               dimSizes = stat_output.dimensionSizes;
+            stat_output.dimensionSizes.clear();
          }
+         stat_output.dimensionSizes = dimSizes;
       }
    };
 }
@@ -199,7 +196,11 @@ namespace detail{
    struct stat_type_to_impl<StatArray<N, StatArray<M, T>>, true>
    {
       using type = stat_array_detail::StatArrayImpl<N,
-            stat_array_detail::StatArrayImpl<M,T,true>, true>;
+            stat_array_detail::StatArrayImpl<M,
+               typename stat_type_to_impl<T, true>::type,
+               true>,
+            true>;
+            // stat_array_detail::StatArrayImpl<M,T,true>, true>;
    };
 
    template <size_t N, typename T>
@@ -212,7 +213,11 @@ namespace detail{
    struct stat_type_to_impl<StatArray<N, StatArray<M, T>>, false>
    {
       using type = stat_array_detail::StatArrayImpl<N,
-            stat_array_detail::StatArrayImpl<M,T,false>, false>;
+            stat_array_detail::StatArrayImpl<M,
+               typename stat_type_to_impl<T, false>::type,
+               false>,
+            false>;
+            // stat_array_detail::StatArrayImpl<M,T,false>, false>;
    };
 }
 

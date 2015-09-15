@@ -6,9 +6,12 @@
 
 namespace stat_log
 {
+struct PrintOptions;
+
 void parseCommandLineArgs(int argc, char** argv,
       std::vector<std::string>& component_strings,
-      StatCmd& cmd, boost::any& cmd_arg);
+      StatCmd& cmd, boost::any& cmd_arg,
+      PrintOptions& printOptions);
 
 std::tuple<std::string, std::string> getHeadTail(std::string s, char delim);
 

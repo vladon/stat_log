@@ -1,5 +1,6 @@
 #include <stat_log/util/command.h>
 #include <stat_log/util/utils.h>
+#include <stat_log/util/printer.h>
 
 #include <boost/tokenizer.hpp>
 #include <boost/algorithm/string/join.hpp>
@@ -81,12 +82,12 @@ po::options_description getProgramOptions()
 }
 
 
-#if 0
-std::string getComponentName(std::string cmd_line)
+#if 1
+std::string getComponentName(const std::string& cmd_line)
 {
    namespace po = boost::program_options;
    std::string component_str;
-   auto desc = detail::getProgramOptions();
+   auto desc = getProgramOptions();
 
    po::variables_map vm;
    po::store(po::command_line_parser(tokenize(cmd_line))
@@ -101,16 +102,22 @@ std::string getComponentName(std::string cmd_line)
 
 void parseCommandLineArgs(int argc, char** argv,
       std::vector<std::string>& component_strings,
-      StatCmd& cmd, boost::any& cmd_arg)
+      StatCmd& cmd,
+      boost::any& cmd_arg,
+      PrintOptions& print_options)
 {
-   //TODO: the "component" arg could have multiple
-   // components --> put each in the component_strings arg.
+   //TODO: fill in the print_options arg.
+   //  --indices, --table, etc.
    cmd = StatCmd::NO_CMD;
    std::vector<std::string> user_strings;
    for(int i = 1; i < argc; ++i)
       user_strings.push_back(argv[i]);
 
    std::string user_cmd_line = boost::algorithm::join(user_strings, " ");
+   //TODO: the "component" arg could have multiple
+   // components --> put each in the component_strings arg.
+   component_strings.push_back(getComponentName(user_cmd_line));
+
 
    auto desc = getProgramOptions();
    po::variables_map vm;
@@ -219,8 +226,7 @@ void parseCommandLineArgs(int argc, char** argv,
       {
          log_cmd.exclude_log_levels = vm["exclude-log-levels"].as<std::vector<std::string>>();
       }
-      // stat_log_control.outputLog(logger_idx, cmd_any);
-      cmd = StatCmd::LOG_LEVEL;
+      cmd = StatCmd::DUMP_LOG;
       cmd_arg = log_cmd;
    }
    if(vm.count("help"))

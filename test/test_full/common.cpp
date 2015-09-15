@@ -295,5 +295,6 @@ void handleCommandLineArgs(int argc, char** argv)
 
    macSisControlStat.parseUserCommands(argc, argv);
    hwIntfControlStat.parseUserCommands(argc, argv);
+   macSisControlStat.showOutput();
 }
 

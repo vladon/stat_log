@@ -1,5 +1,5 @@
 #pragma once
-#include <stat_log/parsers/parser_common.h>
+#include <stat_log/util/command.h>
 #include <stat_log/util/utils.h>
 #include <boost/any.hpp>
 #include <type_traits>
@@ -27,14 +27,6 @@ template <typename StatType>
 struct is_serialization_deferred
 {
    static constexpr bool value = false;
-};
-
-//Used to retrieve the string view of each statistic.
-struct StatCmdOutput
-{
-   std::string entryTitle;
-   std::vector<std::string> entries;
-   std::vector<size_t> dimensionSizes;
 };
 
 namespace detail

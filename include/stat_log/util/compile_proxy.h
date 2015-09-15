@@ -11,7 +11,7 @@
 //   log<ThisLogTag>() << "Logging Message";
 //   hexDump<ThisLogTag>().hexDump(buf, buf_size, "Label");
 //
-//NOTE: that some translation unit should actually provide defitintions for
+//NOTE: that some translation unit should actually provide definitions for
 //   each of these methods otherwise you will get link errors.
 //
 // For example (in some .cpp file):

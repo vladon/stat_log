@@ -1,11 +1,14 @@
 #pragma once
 #include <stat_log/stats/stats_common.h>
-#include <stat_log/parsers/parser_common.h>
+#include <stat_log/util/command.h>
+#include <boost/any.hpp>
 #include <iomanip>
 #include <chrono>
 #include <array>
 #include <ostream>
-#include <boost/any.hpp>
+#include <iostream>
+#include <sstream>
+#include <assert.h>
 
 namespace stat_log
 {
@@ -55,24 +58,24 @@ namespace stat_log
             return sizeof(shared_type);
          }
 
-         void doCommand(StatCmd cmd, boost::any& cmd_arg, const TagInfo& tag_info)
+         void doCommand(StatCmd cmd, boost::any& cmd_arg, std::string& log_output)
          {
+            std::stringstream ss;
             if(false == isLogCommand(cmd))
                return;
-            printHeader(cmd, tag_info);
             if(cmd == StatCmd::LOG_LEVEL)
             {
                auto logLevelCmd = boost::any_cast<LogLevelCommand>(cmd_arg);
                int log_idx = logLevelCmd.logger_idx;
                if(log_idx >= (int)shared_type{}.size())
                {
-                  std::cout << "Invalid log index = " << log_idx << std::endl;
+                  std::cerr << "Invalid log index = " << log_idx << std::endl;
                   std::exit(1);
                }
                auto& log_level_idx = (*shared_ptr)[log_idx];
                if(logLevelCmd.set_log_level)
                {
-                  std::cout << "previous log level = " << LogLevelNames[log_level_idx] << ", ";
+                  ss << "previous log level = " << LogLevelNames[log_level_idx] << ", ";
                   auto it = std::find(LogLevelNames.begin(), LogLevelNames.end(),
                         logLevelCmd.new_log_level);
                   if(it != LogLevelNames.end())
@@ -83,14 +86,14 @@ namespace stat_log
                   {
                      std::cerr << "Invalid log level: " << logLevelCmd.new_log_level << std::endl;
                   }
-                  std::cout << "new log level = " << LogLevelNames[log_level_idx];
+                  ss << "new log level = " << LogLevelNames[log_level_idx];
                }
                else
                {
-                  std::cout << "log level = " << LogLevelNames[log_level_idx];
+                  ss << "log level = " << LogLevelNames[log_level_idx];
                }
+               log_output = ss.str();
             }
-            printFooter(cmd);
          }
       };
    }
@@ -119,7 +122,7 @@ namespace stat_log
    class LoggerRetriever
    {
       public:
-      virtual void getLog(boost::any& log_arg) = 0;
+      virtual void getLog(LogOutputCommand&) = 0;
       virtual ~LoggerRetriever(){}
    };
 

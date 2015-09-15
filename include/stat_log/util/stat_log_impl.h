@@ -18,6 +18,7 @@
 
 #include <boost/mpl/arg.hpp>
 #include <boost/mpl/transform.hpp>
+#include <boost/mpl/list.hpp>
 #include <boost/mpl/fold.hpp>
 #include <boost/mpl/contains.hpp>
 #include <boost/mpl/find_if.hpp>

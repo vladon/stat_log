@@ -1,5 +1,5 @@
 #pragma once
-#include <stat_log/parsers/parser_common.h>
+#include <stat_log/util/command.h>
 #include <stat_log/stats/stats_common.h>
 #include <stat_log/stats/accumulator_types/accumulator_common.h>
 #include <boost/mpl/transform.hpp>

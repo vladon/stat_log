@@ -8,5 +8,6 @@ int main(int argc, char** argv)
    auto& stat = getStatLogSingleton<ControlStat>();
 
    stat.parseUserCommands(argc, argv);
+   stat.showOutput();
    return 0;
 }

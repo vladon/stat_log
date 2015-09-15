@@ -9,7 +9,6 @@
 #include <chrono>
 #include <ostream>
 #include <mutex>
-#include <boost/any.hpp>
 
 namespace stat_log
 {
@@ -42,7 +41,7 @@ namespace stat_log
 
          virtual ~shared_mem_logger_retriever() {}
 
-         void getLog(boost::any& log_cmd);
+         void getLog(LogOutputCommand& log_cmd);
       private:
          boost::interprocess::mapped_region region;
          const char* shm_ptr;

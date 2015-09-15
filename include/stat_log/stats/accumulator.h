@@ -1,8 +1,10 @@
 #pragma once
-#include <stat_log/parsers/parser_common.h>
+#include <stat_log/util/command.h>
 #include <stat_log/stats/stats_common.h>
+#include <stat_log/stats/accumulator_types/accumulator_common.h>
 #include <boost/mpl/transform.hpp>
 #include <boost/mpl/arg.hpp>
+#include <boost/mpl/plus.hpp>
 #include <boost/mpl/accumulate.hpp>
 #include <boost/fusion/include/as_list.hpp>
 
@@ -11,46 +13,13 @@
 #include <iomanip>
 #include <ios>
 #include <mutex>
+#include <array>
 
 namespace stat_log
 {
 
 template <typename AccumSet>
 struct Accumulator {};
-
-namespace accumulator
-{
-
-   //ACCUMULATOR TRAITS:
-   //For each statistic type the user defines, they must also provide a mapping
-   //so the library knowns how to serialize the stat into shared memory.
-   //For example, suppose the _mean_ stat is to be used. In this case, the user
-   //must provide something like (where AccumulatorSetType is their definition
-   //of accumulator_set<..>):
-   //
-   //   template <>
-   //   struct traits<AccumulatorSetType, boost::accumulator::tag::mean>
-   //   {
-   //       using shared_type = typename AccumulatorSetType::sample_type;
-   //       static void serialize(AccumulatorSetType& acc, char* ptr)
-   //       {
-   //          *reinterpret_cast<shared_type*>(ptr) = boost::accumulator::mean(acc);
-   //       }
-   //
-   //       static constexpr size_t size()
-   //       {
-   //          return sizeof(shared_type);
-   //       }
-   //
-   //       static const char* const stat_name = "mean";
-   //       static dumpStat(void* ptr)
-   //       {
-   //          std::cout << *reinterpret_cast<shared_type*>(ptr);
-   //       }
-   //   };
-   template <typename AccumStatType, typename Tag>
-   struct traits;
-}
 
 namespace detail
 {
@@ -165,15 +134,13 @@ namespace detail
             void* shared_ptr,
             StatCmd cmd,
             boost::any& arg,
-            const TagInfo& tag_info,
-            bool is_substat)
+            StatCmdOutput& stat_output)
       {
          using namespace boost::fusion;
 
          auto ptr = reinterpret_cast<char*>(shared_ptr);
-         if(!is_substat)
-            printHeader(cmd, tag_info);
-         //TODO: handle all commands
+         std::stringstream ss_title;
+         std::stringstream ss_entry;
          if(cmd == StatCmd::DUMP_STAT)
          {
             size_t max_width = 0;
@@ -187,41 +154,40 @@ namespace detail
             });
 
             size_t max_pad = max_width + 2;
-            size_t total_width = num_fields * max_pad;
 
-            std::cout << '\n';
-            const auto orig_flags = std::cout.flags();
-            std::cout.flags(std::ios::left);
+            ss_title.flags(std::ios::left);
+            ss_entry.flags(std::ios::left);
             for_each(feature_handlers{}, [&](auto feature_handler)
             {
                using FeatureHandlerType = decltype(feature_handler);
-               std::cout << std::setw(max_pad) << FeatureHandlerType::stat_name;
+               ss_title << std::setw(max_pad);
+               FeatureHandlerType::getTitle(ptr, ss_title);
+               ptr += FeatureHandlerType::size();
             });
-            std::cout << std::setfill('-') << std::setw(total_width) << '\n' << std::endl;
-            std::cout << std::setfill(' ') ;
+            ptr = reinterpret_cast<char*>(shared_ptr);
             for_each(feature_handlers{}, [&](auto feature_handler)
             {
                using FeatureHandlerType = decltype(feature_handler);
                if(num_fields > 1)
                {
-                  std::cout.width(max_pad);
-                  std::cout.precision(max_width);
+                  ss_entry.width(max_pad);
+                  ss_entry.precision(max_width);
                }
-               FeatureHandlerType::dumpStat(ptr);
+               FeatureHandlerType::dumpStat(ptr, ss_entry);
                ptr += FeatureHandlerType::size();
             });
-            std::cout.flags(orig_flags);
-            std::cout << std::endl;
+            stat_output.entryTitle = ss_title.str();
+            stat_output.entries.push_back(ss_entry.str());
          }
          else if(cmd == StatCmd::PRINT_STAT_TYPE)
          {
-            std::cout << "Accumulator:";
+            ss_title << "Accumulator:";
             for_each(feature_handlers{}, [&](auto feature_handler)
             {
                   using FeatureHandlerType = decltype(feature_handler);
-                  std::cout << " " << FeatureHandlerType::stat_name;
+                  ss_title << " " << FeatureHandlerType::stat_name;
             });
-            std::cout << std::endl;
+            stat_output.entryTitle = ss_title.str();
          }
          else if(cmd == StatCmd::CLEAR_STAT)
          {
@@ -229,8 +195,6 @@ namespace detail
             auto control_word_ptr = reinterpret_cast<control_word*>(ptr);
             *control_word_ptr = 1;
          }
-         if(!is_substat)
-            printFooter(cmd);
       }
    };
 

@@ -175,10 +175,9 @@ shared_mem_logger_retriever::shared_mem_logger_retriever(
 }
 
 void
-shared_mem_logger_retriever::getLog(boost::any& log_args)
+shared_mem_logger_retriever::getLog(LogOutputCommand& log_params)
 {
    using namespace boost::interprocess;
-   auto log_params = boost::any_cast<LogOutputCommand>(log_args);
    std::ostream* output_ptr = &std::cout;
    std::fstream output_file;
    if(!log_params.output_filename.empty())

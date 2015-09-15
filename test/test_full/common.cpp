@@ -176,19 +176,7 @@ namespace
       using TheOpStat = std::conditional_t<
          is_mac_sis_tag, MacSisOpStat, HwIntfOpStat>;
       TheOpStat& stat = stat_log::getStatLogSingleton<TheOpStat>();
-      switch(ll)
-      {
-         case LogLevel::DEBUG:
-            return stat.template getDebugLog<Tag>(log_idx);
-         case LogLevel::INFO:
-            return stat.template getInfoLog<Tag>(log_idx);
-         case LogLevel::ALERT:
-            return stat.template getAlertLog<Tag>(log_idx);
-         case LogLevel::ERROR:
-            return stat.template getErrorLog<Tag>(log_idx);
-      }
-      stat.template getErrorLog<Tag>(0) << "Invalid log level!";
-      return stat.template getErrorLog<Tag>(log_idx);
+      return stat.template getLog<Tag>(ll, log_idx);
    }
 
    template <typename MacSisStatType, typename HwIntfStatType, typename LogType>
@@ -307,5 +295,6 @@ void handleCommandLineArgs(int argc, char** argv)
 
    macSisControlStat.parseUserCommands(argc, argv);
    hwIntfControlStat.parseUserCommands(argc, argv);
+   macSisControlStat.showOutput();
 }
 

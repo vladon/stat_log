@@ -7,9 +7,6 @@
 #include <stat_log/loggers/shared_memory_logger.h>
 #include <stat_log/stats/stats_common.h>
 #include <stat_log/stats/simple_counter.h>
-#include <stat_log/stats/stat_array.h>
-#include <stat_log/stats/accumulator_types/histogram.h>
-#include <stat_log/stats/accumulator.h>
 
 #include <iostream>
 #include <vector>

@@ -1,5 +1,6 @@
 #pragma once
 #include <boost/mpl/is_sequence.hpp>
+#include <typeindex>
 
 #define SL_NAME static constexpr const char* name
 
@@ -25,6 +26,13 @@ namespace stat_log
       //TheTagNode::child_list should be either another sequence (if parent) or void
       using type = typename boost::mpl::is_sequence<typename TheTagNode::child_list>::type;
       static const bool value = boost::mpl::is_sequence<typename TheTagNode::child_list>::value;
+   };
+
+   struct TagInfo
+   {
+      const char* const name;
+      std::type_index tag_index;
+      std::size_t depth;
    };
 }
 

@@ -1,9 +1,11 @@
 #pragma once
 #include <stat_log/util/stat_log_impl.h>
-#include <stat_log/parsers/parent_parser.h>
+#include <stat_log/util/component_commander.h>
 #include <stat_log/stats/stats_common.h>
+#include <stat_log/loggers/logger_common.h>
+#include <stat_log/util/printer.h>
+#include <stat_log/util/utils.h>
 
-#include <boost/algorithm/string/join.hpp>
 #include <boost/any.hpp>
 
 #include <thread>
@@ -37,7 +39,7 @@ struct LogStatOperational :
          stat_log::LogStatOperational>; //Note the fully qualified name is required
                                         // due a bug in the clang compiler
    template <typename LogTag>
-   LogGenProxy getLog(std::size_t log_idx, int log_level)
+   LogGenProxy getLog(LogLevel log_level = INFO, std::size_t log_idx = 0)
    {
       assert(log_idx <= loggers.size());
       auto& log_hdl = detail::getHandle<LogTag>(this->theLogs);
@@ -46,34 +48,10 @@ struct LogStatOperational :
       auto cur_log_level = log_hdl.getLevel(log_idx);
       return LogGenProxy {
          *loggers[log_idx],
-         log_level >= cur_log_level,
+         static_cast<decltype(cur_log_level)>(log_level) >= cur_log_level,
          LogHdlType::tag_node::name,
          LogLevelNames[log_level]
       };
-   }
-
-   template <typename LogTag>
-   LogGenProxy getDebugLog(std::size_t log_idx = 0)
-   {
-      return getLog<LogTag>(log_idx, 0);
-   }
-
-   template <typename LogTag>
-   LogGenProxy getInfoLog(std::size_t log_idx = 0)
-   {
-      return getLog<LogTag>(log_idx, 1);
-   }
-
-   template <typename LogTag>
-   LogGenProxy getAlertLog(std::size_t log_idx = 0)
-   {
-      return getLog<LogTag>(log_idx, 2);
-   }
-
-   template <typename LogTag>
-   LogGenProxy getErrorLog(std::size_t log_idx = 0)
-   {
-      return getLog<LogTag>(log_idx, 3);
    }
 
    template <typename StatTag, typename... Args>
@@ -154,16 +132,47 @@ struct LogStatControl :
 
    void parseUserCommands(int argc, char** argv)
    {
-      //First extract the Component hierarchy portion of
-      // the user_input (if it exists)
-      std::vector<std::string> user_strings;
-      for(int i = 1; i < argc; ++i)
-         user_strings.push_back(argv[i]);
+      std::vector<std::string> component_strings;
+      StatCmd cmd = StatCmd::NO_CMD;
+      PrintOptions print_options;
+      boost::any cmd_arg;
 
-      std::string user_cmd_line = boost::algorithm::join(user_strings, " ");
-      std::string component_str = getComponentName(user_cmd_line);
-      parse<StatTagHierarchy>(*this, component_str, user_cmd_line);
-      parse<LogTagHierarchy>(*this, component_str, user_cmd_line);
+      parseCommandLineArgs(argc, argv, component_strings, cmd, cmd_arg, print_options);
+      printer.setCommand(cmd, print_options);
+
+      for(auto& component_str : component_strings)
+      {
+         if(isStatisticCommand(cmd))
+         {
+            componentCommander<StatTagHierarchy>(*this, component_str, cmd, cmd_arg);
+         }
+         if(isLogCommand(cmd))
+         {
+            if(cmd == StatCmd::DUMP_LOG)
+               this->outputLog(cmd_arg);
+            else
+               componentCommander<LogTagHierarchy>(*this, component_str, cmd, cmd_arg);
+         }
+      }
+   }
+
+   void showOutput()
+   {
+      printer.showOutput();
+   }
+
+   template <typename StatTagNode>
+   std::enable_if_t<
+      detail::is_found_in_list
+      <
+         typename BaseClass::TheStats,
+         detail::matches_tag<typename StatTagNode::tag>
+      >::value
+   >
+   setStatDisplayArgs(StatDisplayOptions& stat_display_options)
+   {
+      using Tag = typename StatTagNode::tag;
+      printer.setStatDisplayArgs(std::type_index(typeid(Tag)), stat_display_options);
    }
 
    template <typename StatTagNode>
@@ -180,10 +189,11 @@ struct LogStatControl :
       TagInfo tag_info{
          StatTagNode::name,
          std::type_index(typeid(Tag)),
-         StatTagNode::depth,
-         true};
-      detail::getHandle<typename StatTagNode::tag>(this->theStats)
-         .doCommand(cmd, cmd_arg, tag_info);
+         StatTagNode::depth};
+
+      StatCmdOutput stat_output;
+      detail::getHandle<Tag>(this->theStats).doCommand(cmd, cmd_arg, stat_output);
+      printer.addStatOutput(tag_info, std::move(stat_output));
    }
 
    template <typename LogTagNode>
@@ -200,14 +210,17 @@ struct LogStatControl :
       TagInfo tag_info{
          LogTagNode::name,
          std::type_index(typeid(Tag)),
-         LogTagNode::depth,
-         false};
-      detail::getHandle<Tag>(this->theLogs)
-         .doCommand(cmd, cmd_arg, tag_info);
+         LogTagNode::depth};
+
+      std::string log_output;
+      detail::getHandle<Tag>(this->theLogs).doCommand(cmd, cmd_arg, log_output);
+      printer.addLogOutput(tag_info, std::move(log_output));
    }
 
-   void outputLog(int logger_idx, boost::any& log_args)
+   void outputLog(boost::any& log_args)
    {
+      auto log_params = boost::any_cast<LogOutputCommand>(log_args);
+      const auto logger_idx = log_params.logger_idx;
       if(logger_idx >= (int)loggers.size())
       {
          std::cout << "Invalid log index = " << logger_idx;
@@ -217,9 +230,11 @@ struct LogStatControl :
             std::cout << ". Valid indices = 0..."<< loggers.size() - 1 << std::endl;
          std::exit(1);
       }
-      loggers[logger_idx]->getLog(log_args);
+      loggers[logger_idx]->getLog(log_params);
       std::exit(0);
    }
+
+
 
    void doInit()
    {}
@@ -232,7 +247,8 @@ struct LogStatControl :
       loggers.push_back(logger);
       return loggers.size() - 1;
    }
-
+private:
+   Printer printer;
    std::vector<std::shared_ptr<LoggerRetriever>> loggers;
 };
 

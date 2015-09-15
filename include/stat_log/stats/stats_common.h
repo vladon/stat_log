@@ -1,10 +1,11 @@
 #pragma once
-#include <stat_log/parsers/parser_common.h>
+#include <stat_log/util/command.h>
 #include <stat_log/util/utils.h>
 #include <boost/any.hpp>
 #include <type_traits>
 #include <vector>
 #include <string>
+#include <sstream>
 
 namespace stat_log
 {
@@ -28,12 +29,6 @@ struct is_serialization_deferred
    static constexpr bool value = false;
 };
 
-template <typename Repr>
-struct num_stat_dimensions
-{
-   static constexpr int value = 1;
-};
-
 namespace detail
 {
    //Some StatTypes may have different implementations based on whether we are
@@ -45,24 +40,6 @@ namespace detail
    struct stat_type_to_impl
    {
       using type = StatType;
-   };
-
-   struct ControlStatBase
-   {
-      using shared_type = void;
-      static void doStatCommand(
-            void* shared_ptr,
-            StatCmd cmd,
-            boost::any& arg,
-            const TagInfo& tag_info,
-            bool is_substat)
-      {
-         if(printingRequired(cmd))
-         {
-            cmd = StatCmd::PRINT_TAG;
-            printHeader(cmd, tag_info);
-         }
-      }
    };
 
 
@@ -81,28 +58,24 @@ namespace detail
             void* shared_ptr,
             StatCmd cmd,
             boost::any& arg,
-            const TagInfo& tag_info,
-            bool is_substat)
+            StatCmdOutput& stat_output)
       {
          auto ptr = reinterpret_cast<shared_type*>(shared_ptr);
-         //TODO: handle all commands
          auto& val = *ptr;
-         if(!is_substat)
-            printHeader(cmd, tag_info);
          if(cmd == StatCmd::DUMP_STAT)
          {
-            std::cout << std::dec << (unsigned long int)val;
+            std::stringstream ss;
+            ss << (unsigned long int)val;
+            stat_output.entries.push_back(ss.str());
          }
          else if(cmd == StatCmd::PRINT_STAT_TYPE)
          {
-            std::cout << "Simple Stat";
+            stat_output.entryTitle = "Simple Stat";
          }
          else if(cmd == StatCmd::CLEAR_STAT)
          {
             val = 0;
          }
-         if(!is_substat)
-            printFooter(cmd);
       }
    };
 
@@ -165,14 +138,11 @@ struct OperationalStatProxy : detail::StatProxyBase<StatType, true>
 template <typename StatType>
 struct ControlStatProxy : detail::StatProxyBase<StatType, false>
 {
-   void doCommand(StatCmd cmd, boost::any& cmd_arg, const TagInfo& tag_info)
+   void doCommand(StatCmd cmd, boost::any& cmd_arg, StatCmdOutput& stat_output)
    {
       if(false == isStatisticCommand(cmd))
          return;
-      if(cmd == StatCmd::PRINT_TAG)
-         printHeader(cmd, tag_info);
-      else
-         this->doStatCommand(this->shared_ptr, cmd, cmd_arg, tag_info, false);
+      this->doStatCommand(this->shared_ptr, cmd, cmd_arg, stat_output);
    }
 };
 

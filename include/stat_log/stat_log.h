@@ -1,6 +1,6 @@
 #pragma once
 #include <stat_log/util/stat_log_impl.h>
-#include <stat_log/util/component_commander.h>
+#include <stat_log/util/tag_commander.h>
 #include <stat_log/stats/stats_common.h>
 #include <stat_log/loggers/logger_common.h>
 #include <stat_log/util/printer.h>
@@ -132,26 +132,26 @@ struct LogStatControl :
 
    void parseUserCommands(int argc, char** argv)
    {
-      std::vector<std::string> component_strings;
+      std::vector<std::string> tag_strings;
       StatCmd cmd = StatCmd::NO_CMD;
       PrintOptions print_options;
       boost::any cmd_arg;
 
-      parseCommandLineArgs(argc, argv, component_strings, cmd, cmd_arg, print_options);
+      parseCommandLineArgs(argc, argv, tag_strings, cmd, cmd_arg, print_options);
       printer.setCommand(cmd, print_options);
 
-      for(auto& component_str : component_strings)
+      for(auto& tag_str : tag_strings)
       {
          if(isStatisticCommand(cmd))
          {
-            componentCommander<StatTagHierarchy>(*this, component_str, cmd, cmd_arg);
+            tagCommander<StatTagHierarchy>(*this, tag_str, cmd, cmd_arg);
          }
          if(isLogCommand(cmd))
          {
             if(cmd == StatCmd::DUMP_LOG)
                this->outputLog(cmd_arg);
             else
-               componentCommander<LogTagHierarchy>(*this, component_str, cmd, cmd_arg);
+               tagCommander<LogTagHierarchy>(*this, tag_str, cmd, cmd_arg);
          }
       }
    }

@@ -59,10 +59,10 @@ template <typename TagNode, typename StatLogControl,
             !is_parent<TagNode>::value
          >::type* = nullptr
    >
-void componentCommander(StatLogControl& stat_log_control,
-      std::string& component_name, StatCmd cmd, boost::any& cmd_arg)
+void tagCommander(StatLogControl& stat_log_control,
+      std::string& tag_name, StatCmd cmd, boost::any& cmd_arg)
 {
-   if(component_name == TagNode::name || component_name.empty())
+   if(tag_name == TagNode::name || tag_name.empty())
       detail::processCommand<TagNode>(stat_log_control, cmd, cmd_arg);
 }
 
@@ -72,21 +72,19 @@ template <typename TagNode, typename StatLogControl,
             is_parent<TagNode>::value
          >::type* = nullptr
    >
-void componentCommander(StatLogControl& stat_log_control,
-      std::string& component_name,
-      StatCmd cmd,
-      boost::any& cmd_arg)
+void tagCommander(StatLogControl& stat_log_control,
+      std::string& tag_name, StatCmd cmd, boost::any& cmd_arg)
 {
-   if(component_name.empty())
+   if(tag_name.empty())
    {
       detail::processCommand<TagNode>(stat_log_control, cmd, cmd_arg);
       return;
    }
 
-   auto child_component_name = component_name;
-   auto component_head_tail = getHeadTail(component_name,'.');
-   auto& head_c = std::get<0>(component_head_tail);
-   auto& tail_c = std::get<1>(component_head_tail);
+   auto child_tag_name = tag_name;
+   auto tag_head_tail = getHeadTail(tag_name,'.');
+   auto& head_c = std::get<0>(tag_head_tail);
+   auto& tail_c = std::get<1>(tag_head_tail);
 
    if(head_c != TagNode::name)
    {
@@ -97,12 +95,12 @@ void componentCommander(StatLogControl& stat_log_control,
       detail::processCommand<TagNode>(stat_log_control, cmd, cmd_arg);
       return;
    }
-   child_component_name = tail_c;
+   child_tag_name = tail_c;
    using Children = typename TagNode::child_list;
    boost::fusion::for_each(Children{}, [&](auto ctag_node)
    {
-       componentCommander<decltype(ctag_node)>(stat_log_control,
-             child_component_name, cmd, cmd_arg);
+       tagCommander<decltype(ctag_node)>(stat_log_control,
+             child_tag_name, cmd, cmd_arg);
    });
 }
 

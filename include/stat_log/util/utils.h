@@ -9,7 +9,7 @@ namespace stat_log
 struct PrintOptions;
 
 void parseCommandLineArgs(int argc, char** argv,
-      std::vector<std::string>& component_strings,
+      std::vector<std::string>& tag_strings,
       StatCmd& cmd, boost::any& cmd_arg,
       PrintOptions& printOptions);
 

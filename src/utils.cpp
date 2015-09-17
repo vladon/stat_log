@@ -51,42 +51,43 @@ po::options_description getProgramOptions()
    po::options_description desc("Options", TERM_NUM_COLUMNS);
    desc.add_options()
    ("help", po::value<std::string>()->implicit_value(""),
-    "Show help memu")
-
-   ("component", po::value<std::string>()->default_value(""),
-    "TODO")
+    "Show help menu.\n")
 
    ("show-tags", po::bool_switch()->default_value(false),
-    "Show the tag hierarchy.")
+    "Show the tag hierarchy.\n")
+
+   ("tag", po::value<std::string>()->default_value(""),
+    "Limit the output to the descendants of the given tag.\n"
+    "Use \".\" to delimit tags.\n")
 
    ("dump-stats", po::bool_switch()->default_value(false),
-    "Dump all statistics")
+    "Dump all statistics.\n")
 
    ("stat-types", po::bool_switch()->default_value(false),
-    "Print the type of each statistic.")
+    "Print the type of each statistic.\n")
 
    ("clear-stats", po::bool_switch()->default_value(false),
-    "Zero out statistics.")
+    "Zero out statistics.\n")
 
    ("log-level", po::value<std::vector<std::string>>()->multitoken()->zero_tokens(),
-    "Set/Show per component log level. Args\n"
+    "Set/Show per tag log level. Args\n"
     "\t<loggerIdx> [<LogLevel>]\n"
     "where loggerIdx is the index of the logger, and LogLevel is\n"
     "the new value for the log level (if this argument is not\n"
-    "specified the current log level is displayed).")
+    "specified the current log level is displayed).\n")
 
    ("output-log", po::value<std::vector<std::string>>()->multitoken()->zero_tokens(),
-    "type \"output-log --help\" for all options")
+    "type \"output-log --help\" for all options.\n")
    ;
    return desc;
 }
 
 
 #if 1
-std::string getComponentName(const std::string& cmd_line)
+std::string getTagName(const std::string& cmd_line)
 {
    namespace po = boost::program_options;
-   std::string component_str;
+   std::string tag_str;
    auto desc = getProgramOptions();
 
    po::variables_map vm;
@@ -96,12 +97,12 @@ std::string getComponentName(const std::string& cmd_line)
          .run(),
          vm);
    po::notify(vm);
-   return vm["component"].as<std::string>();
+   return vm["tag"].as<std::string>();
 }
 #endif
 
 void parseCommandLineArgs(int argc, char** argv,
-      std::vector<std::string>& component_strings,
+      std::vector<std::string>& tag_strings,
       StatCmd& cmd,
       boost::any& cmd_arg,
       PrintOptions& print_options)
@@ -114,9 +115,9 @@ void parseCommandLineArgs(int argc, char** argv,
       user_strings.push_back(argv[i]);
 
    std::string user_cmd_line = boost::algorithm::join(user_strings, " ");
-   //TODO: the "component" arg could have multiple
-   // components --> put each in the component_strings arg.
-   component_strings.push_back(getComponentName(user_cmd_line));
+   //TODO: the "tag" arg could have multiple
+   // tags --> put each in the tag_strings arg.
+   tag_strings.push_back(getTagName(user_cmd_line));
 
 
    auto desc = getProgramOptions();

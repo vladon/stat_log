@@ -152,14 +152,15 @@ namespace detail
                max_width = std::max(max_width, len);
             });
 
-            size_t max_pad = max_width + 2;
+            size_t max_pad = max_width + 4;
 
             ss_title.flags(std::ios::left);
             ss_entry.flags(std::ios::left);
+
             for_each(feature_handlers{}, [&](auto feature_handler)
             {
                using FeatureHandlerType = decltype(feature_handler);
-               ss_title << std::setw(max_pad);
+               ss_title.width(max_pad);
                FeatureHandlerType::getTitle(ptr, ss_title);
                ptr += FeatureHandlerType::size();
             });

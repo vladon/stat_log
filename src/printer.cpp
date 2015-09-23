@@ -122,8 +122,6 @@ void Printer::printDumpStat()
       if(!stat_output.entries.empty())
       {
          std::cout << elem.tag_info.name << std::endl;
-         if(!stat_output.entryTitle.empty())
-            std::cout << "  " << stat_output.entryTitle << std::endl;
 
          auto idx_to_dim_string = [](size_t idx, const std::vector<size_t>& dimSizes)
          {
@@ -146,11 +144,17 @@ void Printer::printDumpStat()
             return ss.str();
          };
 
+         if(!stat_output.entryTitle.empty())
+         {
+            const auto idx_string = idx_to_dim_string(0, stat_output.dimensionSizes);
+            for(size_t i = 0; i < idx_string.size(); ++i)
+               std::cout << " ";
+            std::cout << stat_output.entryTitle << std::endl;
+         }
          for(size_t i = 0; i < stat_output.entries.size(); ++i)
          {
             auto& stat_entry = stat_output.entries[i];
-            if(elem.stat_output.entries.size() > 0)
-               std::cout << idx_to_dim_string(i, stat_output.dimensionSizes);
+            std::cout << idx_to_dim_string(i, stat_output.dimensionSizes);
             std::cout << stat_entry << std::endl;
          }
 

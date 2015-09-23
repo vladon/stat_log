@@ -78,12 +78,13 @@ namespace stat_log
                return sizeof(shared_type);
             }
 
+
             static void getTitle(void* ptr, std::stringstream& ss)
             {
                auto hist_ptr = reinterpret_cast<shared_type*>(ptr);
                for(std::size_t i = 0; i < hist_ptr->size(); ++i)
                {
-                  ss.width(10);
+                  ss.width(8);
                   const auto& tup = (*hist_ptr)[i];
                   ss << std::get<0>(tup);
                }
@@ -94,7 +95,8 @@ namespace stat_log
                auto hist_ptr = reinterpret_cast<shared_type*>(ptr);
                for(std::size_t i = 0; i < hist_ptr->size(); ++i)
                {
-                  ss.width(10);
+                  ss.precision(4);
+                  ss.width(8);
                   const auto& tup = (*hist_ptr)[i];
                   ss << std::get<1>(tup);
                }

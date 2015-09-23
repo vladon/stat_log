@@ -1,5 +1,6 @@
 #pragma once
 #include <boost/accumulators/framework/extractor.hpp>
+#include <boost/accumulators/statistics/count.hpp>
 #include <sstream>
 
 
@@ -46,8 +47,13 @@ struct traits_common
    using shared_type = SharedType;
    static void serialize(AccumSet& acc, char* ptr)
    {
-      *reinterpret_cast<shared_type*>(ptr) =
-         boost::accumulators::extractor<AccumStatTag>{}(acc);
+      using namespace boost::accumulators;
+      auto& shm_value = *reinterpret_cast<shared_type*>(ptr);
+      if(extractor<tag::count>{}(acc) > 0)
+         shm_value = boost::accumulators::extractor<AccumStatTag>{}(acc);
+      else
+         shm_value = static_cast<shared_type>(0);
+
    }
 
    static constexpr size_t size()

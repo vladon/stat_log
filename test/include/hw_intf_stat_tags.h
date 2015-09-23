@@ -4,6 +4,9 @@
 
 namespace hw_intf
 {
+constexpr int num_fpga_faults = 5;
+constexpr int num_fpga_interrupts = 3;
+
 struct HwIntfBase {};
 SL_MAKE_TAGS_NAMED_BASE(
       StatTags,

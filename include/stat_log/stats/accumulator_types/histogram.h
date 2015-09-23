@@ -55,11 +55,11 @@ namespace stat_log
 
       namespace detail
       {
-         template <typename AccumSet, typename HistTypeTag>
+         template <typename AccumSet, typename HistTypeTag, typename bin_sample_type>
          struct traits_common_hist
          {
             using shared_type = std::array<
-               std::tuple<typename AccumSet::sample_type, std::size_t>, // (bin_start, count in bin)
+               std::tuple<typename AccumSet::sample_type, bin_sample_type>, // (bin_start, bin value)
                AccumSet::num_hist_bins>;
             static void serialize(AccumSet& acc, char* ptr)
             {
@@ -117,14 +117,14 @@ namespace stat_log
 
       template <typename AccumSet>
       struct traits<AccumSet, boost::accumulators::tag::histogram_count>
-         : detail::traits_common_hist<AccumSet, boost::accumulators::tag::histogram_count>
+         : detail::traits_common_hist<AccumSet, boost::accumulators::tag::histogram_count, size_t>
       {
          static constexpr const char* stat_name = "histogram (count)";
       };
 
       template <typename AccumSet>
       struct traits<AccumSet, boost::accumulators::tag::histogram_density>
-         : detail::traits_common_hist<AccumSet, boost::accumulators::tag::histogram_density>
+         : detail::traits_common_hist<AccumSet, boost::accumulators::tag::histogram_density, double>
       {
          static constexpr const char* stat_name = "histogram (density)";
       };

@@ -3,26 +3,30 @@
 
 namespace sis
 {
-   struct SisBase{};
+constexpr int max_nbrs = 5;
+constexpr int num_frequencies = 4;
+constexpr int num_rx_frame_status = 4;
 
-   SL_MAKE_TAGS_NAMED_BASE(
-               StatTags,
-               SisBase,
-               (PROP_DELAY)
-               (CHANNEL_QUALITY)
-               (FRAME_RX_STATUS)
-               (LINK_STATUS)
-         );
+struct SisBase{};
+
+SL_MAKE_TAGS_NAMED_BASE(
+      StatTags,
+      SisBase,
+      (PROP_DELAY)
+      (CHANNEL_QUALITY)
+      (FRAME_RX_STATUS)
+      (LINK_STATUS)
+      );
 
 
-   struct SIS_STATS
-   {
-      SL_NAME = "SIS_STAT";
-      using children = StatTags;
-   };
+struct SIS_STATS
+{
+   SL_NAME = "SIS_STAT";
+   using children = StatTags;
+};
 
-   struct SIS_LOG
-   {
-      SL_NAME = "SIS_LOG";
-   };
+struct SIS_LOG
+{
+   SL_NAME = "SIS_LOG";
+};
 }

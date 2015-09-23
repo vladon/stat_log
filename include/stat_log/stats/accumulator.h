@@ -104,7 +104,6 @@ namespace detail
          auto ptr = reinterpret_cast<char*>(shared_ptr);
          ptr += sizeof(shared_type) - sizeof(control_word);
          auto control_word_ptr = reinterpret_cast<control_word*>(ptr);
-
          //Check the control word to see if we need to reset the
          // accumulator.
          if(*control_word_ptr)

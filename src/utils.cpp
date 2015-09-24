@@ -197,9 +197,9 @@ void parseCommandLineArgs(int argc, char** argv,
          std::cout << log_desc << std::endl;
          std::exit(0);
       }
-      if(vm.count("log-file"))
+      if(vm.count("out-file"))
       {
-         log_cmd.output_filename = vm["log-file"].as<std::string>();
+         log_cmd.output_filename = vm["out-file"].as<std::string>();
       }
       if(vm.count("log-idx"))
       {

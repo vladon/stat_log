@@ -56,9 +56,10 @@ po::options_description getProgramOptions()
    ("show-tags", po::bool_switch()->default_value(false),
     "Show the tag hierarchy.\n")
 
-   ("tag", po::value<std::string>()->default_value(""),
-    "Limit the output to the descendants of the given tag.\n"
-    "Use \".\" to delimit tags.\n")
+   ("tags", po::value<std::vector<std::string>>()->multitoken()->zero_tokens(),
+    "Limit the output to the descendants of the given tag(s).\n"
+    "Delimit multiple tags with a space.\n"
+    "\".\" should be used when specifying hierarchical tags.\n")
 
    ("dump-stats", po::bool_switch()->default_value(false),
     "Dump all statistics.\n")
@@ -83,8 +84,7 @@ po::options_description getProgramOptions()
 }
 
 
-#if 1
-std::string getTagName(const std::string& cmd_line)
+std::vector<std::string> getTagNames(const std::string& cmd_line)
 {
    namespace po = boost::program_options;
    std::string tag_str;
@@ -97,9 +97,10 @@ std::string getTagName(const std::string& cmd_line)
          .run(),
          vm);
    po::notify(vm);
-   return vm["tag"].as<std::string>();
+   if(vm.count("tags"))
+      return vm["tags"].as<std::vector<std::string>>();
+   return std::vector<std::string>{};
 }
-#endif
 
 void parseCommandLineArgs(int argc, char** argv,
       std::vector<std::string>& tag_strings,
@@ -115,10 +116,10 @@ void parseCommandLineArgs(int argc, char** argv,
       user_strings.push_back(argv[i]);
 
    std::string user_cmd_line = boost::algorithm::join(user_strings, " ");
-   //TODO: the "tag" arg could have multiple
-   // tags --> put each in the tag_strings arg.
-   tag_strings.push_back(getTagName(user_cmd_line));
-
+   auto tags = getTagNames(user_cmd_line);
+   tag_strings.insert(tag_strings.end(), tags.begin(), tags.end());
+   if(tag_strings.empty())
+      tag_strings.push_back("");
 
    auto desc = getProgramOptions();
    po::variables_map vm;

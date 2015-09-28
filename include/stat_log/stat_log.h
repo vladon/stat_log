@@ -132,26 +132,26 @@ struct LogStatControl :
 
    void parseUserCommands(int argc, char** argv)
    {
-      std::vector<std::string> tag_strings;
+      std::vector<TagDisplayDesc> tag_disp_descs;
       StatCmd cmd = StatCmd::NO_CMD;
-      PrintOptions print_options;
       boost::any cmd_arg;
 
-      parseCommandLineArgs(argc, argv, tag_strings, cmd, cmd_arg, print_options);
-      printer.setCommand(cmd, print_options);
+      parseCommandLineArgs(argc, argv, tag_disp_descs, cmd, cmd_arg);
+      printer.setCommand(cmd);
 
-      for(auto& tag_str : tag_strings)
+      for(auto& tag_desc : tag_disp_descs)
       {
+         printer.setPrintOptions(tag_desc.print_options);
          if(isStatisticCommand(cmd))
          {
-            tagCommander<StatTagHierarchy>(*this, tag_str, cmd, cmd_arg);
+            tagCommander<StatTagHierarchy>(*this, tag_desc.tag_hname, cmd, cmd_arg);
          }
          if(isLogCommand(cmd))
          {
             if(cmd == StatCmd::DUMP_LOG)
                this->outputLog(cmd_arg);
             else
-               tagCommander<LogTagHierarchy>(*this, tag_str, cmd, cmd_arg);
+               tagCommander<LogTagHierarchy>(*this, tag_desc.tag_hname, cmd, cmd_arg);
          }
       }
    }

@@ -7,6 +7,8 @@
 #include <boost/program_options/parsers.hpp>
 #include <boost/program_options/variables_map.hpp>
 
+#include <boost/algorithm/string.hpp>
+
 #include <string>
 #include <algorithm>
 #include <vector>
@@ -18,6 +20,7 @@ namespace po = boost::program_options;
 
 namespace stat_log
 {
+
 po::options_description getProgramOptions()
 {
    po::options_description desc("Options", TERM_NUM_COLUMNS);
@@ -30,8 +33,18 @@ po::options_description getProgramOptions()
 
    ("tags,t", po::value<std::vector<std::string>>()->multitoken()->zero_tokens(),
     "Limit the effects to the descendants of the given tag(s).\n"
-    "Delimit multiple tags with a space.\n"
-    "\".\" should be used when specifying hierarchical tags.\n")
+    "Multiple tags can be specified each with its own --tags prefix.\n"
+    "\".\" should be used when specifying hierarchical tags.\n"
+    "An optional suffix can be appended to the tag name for the purpose\n"
+    "of limiting the --dump-stats output for multi-dimensioned statistics.\n"
+    "The suffix starts with a \":\" and has the format:\n"
+    "  <tag_name>:[<index-specifier>[,<index-specifier> ...]]\n"
+    "where the format of index-specifier is:\n"
+    "  [(n | n-m | n- | -m)[.(n | n-m | n- | -m) ...]]\n"
+    "Example: for a 10 x 5 x 4 dimensioned statistic, the syntax:\n"
+    "  <tag_name>:1-3.8,2,2-\n"
+    "will specify rows 1,2,3 and 8 from the first dimension,\n"
+    "row 2 from the 2nd dimension and rows 2 and 3 from the last dimension.\n")
 
    //TODO: add option if TimeSeries statistics are to be dumped as well.
    ("dump-stats,d", po::bool_switch()->default_value(false),
@@ -45,7 +58,7 @@ po::options_description getProgramOptions()
 
    ("log-level,L", po::value<std::vector<std::string>>()->multitoken()->zero_tokens(),
     "Set/Show per tag log level. Args\n"
-    "\t<loggerIdx> [<LogLevel>]\n"
+    "  <loggerIdx> [<LogLevel>]\n"
     "where loggerIdx is the index of the logger, and LogLevel is\n"
     "the new value for the log level (if this argument is not\n"
     "specified the current log level is displayed).\n")
@@ -57,38 +70,14 @@ po::options_description getProgramOptions()
    return desc;
 }
 
-
-std::vector<std::string> getTagNames(int argc, char** argv)
-{
-   namespace po = boost::program_options;
-   std::string tag_str;
-   auto desc = getProgramOptions();
-
-   po::variables_map vm;
-   po::store(po::command_line_parser(argc, argv)
-         .options(desc)
-         .allow_unregistered()
-         .run(),
-         vm);
-   po::notify(vm);
-   if(vm.count("tags"))
-      return vm["tags"].as<std::vector<std::string>>();
-   return std::vector<std::string>{};
-}
-
 void parseCommandLineArgs(int argc, char** argv,
-      std::vector<std::string>& tag_strings,
+      std::vector<TagDisplayDesc>& tag_disp_descs,
       StatCmd& cmd,
-      boost::any& cmd_arg,
-      PrintOptions& print_options)
+      boost::any& cmd_arg)
 {
    //TODO: fill in the print_options arg.
-   //  --indices, --table, etc.
+   //  --table, etc.
    cmd = StatCmd::NO_CMD;
-   auto tags = getTagNames(argc, argv);
-   tag_strings.insert(tag_strings.end(), tags.begin(), tags.end());
-   if(tag_strings.empty())
-      tag_strings.push_back("");
 
    auto desc = getProgramOptions();
    po::variables_map vm;
@@ -97,6 +86,27 @@ void parseCommandLineArgs(int argc, char** argv,
          .allow_unregistered()
          .run();
    po::store(parsed, vm);
+
+   auto tags = std::vector<std::string>{};
+   if(vm.count("tags"))
+      tags = vm["tags"].as<std::vector<std::string>>();
+   tag_disp_descs.clear();
+   if(tags.empty())
+   {
+      tag_disp_descs.push_back(TagDisplayDesc{});
+   }
+   for(auto& tag: tags)
+   {
+      TagDisplayDesc tag_desc;
+      std::vector<std::string> tag_indices;
+      boost::split(tag_indices, tag, boost::is_any_of(":"));
+      tag_desc.tag_hname = tag_indices[0];
+      if(tag_indices.size() > 1)
+      {
+         tag_desc.print_options.array_indices = tag_indices[1];
+      }
+      tag_disp_descs.push_back(std::move(tag_desc));
+   }
 
    if(vm["show-tags"].as<bool>())
    {

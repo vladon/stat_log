@@ -30,7 +30,7 @@ namespace stat_log
 
    struct TagInfo
    {
-      const char* const name;
+      const char* name;
       std::type_index tag_index;
       std::size_t depth;
    };

@@ -1,5 +1,9 @@
 stat_log
 ========
+NOTE: This project’s original home is
+    https://github.com/rjmccabe3701/stat_log.git
+
+WARNING: This documentation is somewhat outdated (I will eventually get around to updating it).
 
 stat_log is an extensible C++ library for logging and statistic collection. I got the idea for this after
 "reinventing the wheel" on several projects at work.  I finally decided that I would create a re-usable 

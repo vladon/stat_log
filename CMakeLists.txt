@@ -9,10 +9,6 @@ find_package(Boost 1.54 COMPONENTS program_options REQUIRED )
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-option(STAT_LOG_TESTS_ENABLE "Generate test programs" ON)
 
 add_subdirectory(src)
-
-if(STAT_LOG_TESTS_ENABLE)
-    add_subdirectory(test)
-endif()
+add_subdirectory(test EXCLUDE_FROM_ALL)

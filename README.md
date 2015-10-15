@@ -3,8 +3,6 @@ stat_log
 NOTE: This project’s original home is
     https://github.com/rjmccabe3701/stat_log.git
 
-WARNING: This documentation is somewhat outdated (I will eventually get around to updating it).
-
 stat_log is an extensible C++ library for logging and statistic collection. It's primary aim is to be efficient and configurable; It was designed with embedded systems applications in mind -- in particular, software-defined radio.
 
 For the impatient, here is how you build the library:
@@ -208,4 +206,56 @@ Each radio component generates statistic and logging through the ```stat_log::lo
  writeStat<hw_intf::FPGA_FAULT_TAG>(which_fault, 1);
 ```
 
+As an example of how to interact with the running generator program do:
+```bash
+./test_full_controller
+```
+and in another terminal try doing:
 
+```bash
+#Show the stat and log tag hierarchy:
+./test_full_controller -s 
+
+#Show log, exclude tags, time stamps, and the INFO and DEBUG log level entries
+./test_full_controller --output-log  --no-tag --no-time-stamp --exclude-log-levels INFO DEBUG
+
+#Show the last 10 entries of the log
+./test_full_controller --output-log |  tail -n 10
+
+#Globally set the Log level to ALERT
+./test_full_controller -L 0 ALERT 
+
+#Set the MAC_SIS_LOG.MAC_LOG to DEBUG
+./test_full_controller -t MAC_SIS_LOG.MAC_LOG -L 0 DEBUG
+
+#Show the statistic types
+./test_full_controller --stat-types
+
+#Dump ALL stats
+./test_full_controller -d
+
+#Dump only MAC_STATS
+./test_full_controller -t MAC_SIS_STAT.MAC_STATS -d 
+
+#Clear only MAC_STATS
+./test_full_controller -t MAC_SIS_STAT.MAC_STATS -c
+
+#Show multiple different statistic types (The size of sent IP packets and HW_INTF_STATS)
+./test_full_controller -t MAC_SIS_STAT.MAC_STATS.IP_PKT_SENT_SIZE -t HW_INTF_STATS -d 
+
+#Example stat: Per-link histogram of propagation delays:
+ ./test_full_controller -t MAC_SIS_STAT.SIS_STAT.PROP_DELAY -d
+
+#Example stat: Per-link, per-frequency channel quality
+./test_full_controller -t MAC_SIS_STAT.SIS_STAT.CHANNEL_QUALITY -d
+
+#Filtering multi-dimensional statistics:
+#Show the channel qualities for neighbors 1 and 4 (all frequencies)
+./test_full_controller -t MAC_SIS_STAT.SIS_STAT.CHANNEL_QUALITY:1.4 -d  
+
+#Show the channel qualities for frequency 2 (all neighbors)
+./test_full_controller -t MAC_SIS_STAT.SIS_STAT.CHANNEL_QUALITY:1.4 -d  
+
+#Show the channel qualities for neighbors 1 and 4 (exclude frequencies 0 and 1)
+./test_full_controller -t MAC_SIS_STAT.SIS_STAT.CHANNEL_QUALITY:1.4,2- -d
+```

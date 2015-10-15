@@ -59,13 +59,13 @@ The following is a list of design principles:
     
     See [Stats](doc/statistic_types.md) for a list of statistic types provided by the stat\_log library _and_ documentation      on how to create your own.
   
-    The key point is that, in all of these examples, the client code's statistic generation call site need not change.    
+    The key point is that, in all of these examples, the client code's statistic generation call site need not change.
     It is, of course, desirable to have as much visibility into your running application as possible; we *could* configure
     all statistics to be of the "time-series" variety.  However, this could come at a cost of higher CPU/memory load.  During
     the debugging phase, the user may choose to configure the statistics to capture more information, while the released code
     would use simpler (lower overhead) stats -- and all that is required is a re-compile of the application software.
     
-2.  _Seemless support for multi-dimensioned statistics._  In many cases a particular statistic type is associated with a    
+2.  _Seemless support for multi-dimensioned statistics._  In many cases a particular statistic type is associated with a
    dimension.  Going back to our LINK_QUALITY example, usually the software is interested in a *per-link* link quality.  It     would be unweildy for the user to have to do something like:
    ```cpp
    auto this_link_quality = getLinkQualityForNeighbor(nbr_num);
@@ -101,13 +101,13 @@ The following is a list of design principles:
   ```cpp
   stat_log::logger<LINK_LAYER>(INFO) << "Received a HELLO message from nbr " << nbrId;
   ```
-  Where ```LINK_LAYER``` is a logging tag which is used for the purpose of allowing granular displaying and filtering of   
+  Where ```LINK_LAYER``` is a logging tag which is used for the purpose of allowing granular displaying and filtering of
   logging messages.  This message will be stored and be made available for retrieval at a later time.  When retreived the log   entry may look something like:
   ```
   12:21:35.568309: LINK_LAYER: INFO: Received a HELLO message from nbr 5
   ```
-  To avoid inundating the logging buffer, the logging messages should be filter-able by the logging tag (in this case   
-  "LINK_LAYER") *and* the logging level (in this case INFO). 
+  To avoid inundating the logging buffer, the logging messages should be filter-able by the logging tag (in this case
+  "LINK_LAYER") *and* the logging level (in this case "INFO"). 
   
   Multiple logging buffers should be supported.  This is useful for radio software in which you want to provide both
   a log of software events *and* a hexdump of packets flowing through the radio.  And example of the hexdump generation code   would be:

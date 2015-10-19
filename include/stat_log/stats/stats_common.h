@@ -56,7 +56,8 @@ namespace detail
    {
       using shared_type = Repr;
       using sample_type = shared_type;
-      static void write(void* shared_ptr, sample_type value)
+      template <typename ...Args>
+      static void write(void* shared_ptr, sample_type value, Args... args)
       {
          auto ptr = reinterpret_cast<shared_type*>(shared_ptr);
          WritePolicy::write(ptr, value);

@@ -47,6 +47,12 @@ namespace stat_log
          void setSharedPtr(void* ptr)
          {
             shared_ptr = reinterpret_cast<shared_type*>(ptr);
+            //Set the default log level to INFO
+            //TODO: make this configurable
+            for(size_t i = 0; i < shared_ptr->size(); ++i)
+            {
+               (*shared_ptr)[i] = INFO;
+            }
          }
 
          unsigned char getLevel(int log_idx)

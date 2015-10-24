@@ -42,7 +42,7 @@ template <typename StatTagTree, typename LogTagTree>
 struct LogStatOperational :
    detail::LogStatBase<StatTagTree, LogTagTree, true, LogStatOperational>
 {
-   using BaseClass = typename
+   using BaseClass =
       detail::LogStatBase<StatTagTree, LogTagTree, true,
          stat_log::LogStatOperational>; //Note the fully qualified name is required
                                         // due a bug in the clang compiler
@@ -130,7 +130,7 @@ template <typename StatTagTree, typename LogTagTree>
 struct LogStatControl :
    detail::LogStatBase<StatTagTree, LogTagTree, false, LogStatControl>
 {
-   using BaseClass = typename
+   using BaseClass =
       detail::LogStatBase<StatTagTree, LogTagTree, false,
          stat_log::LogStatControl>; //Note the fully qualified name is required
                                     // due a bug in the clang compiler

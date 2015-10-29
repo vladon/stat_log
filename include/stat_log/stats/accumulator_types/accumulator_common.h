@@ -38,9 +38,13 @@ namespace accumulator
 //       }
 //
 //       static const char* const stat_name = "mean";
-//       static dumpStat(void* ptr)
+//       static void dumpStat(void* ptr, bool is_valid, std::stringstream& ss)
 //       {
 //          ss << *reinterpret_cast<shared_type*>(ptr);
+//          if(is_valid)
+//             ss << *reinterpret_cast<shared_type*>(ptr);
+//          else
+//             ss << shared_type{};
 //       }
 //   };
 template <typename AccumStatType, typename Tag>
@@ -74,9 +78,12 @@ struct traits_common
       ss << Derived<AccumSet, AccumStatTag>::stat_name;
    }
 
-   static void dumpStat(void* ptr, std::stringstream& ss)
+   static void dumpStat(void* ptr, bool is_valid, std::stringstream& ss)
    {
-      ss << *reinterpret_cast<shared_type*>(ptr);
+      if(is_valid)
+         ss << *reinterpret_cast<shared_type*>(ptr);
+      else
+         ss << shared_type{}; //Valid initialization to "0"
    }
 };
 

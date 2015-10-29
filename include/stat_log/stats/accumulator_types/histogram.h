@@ -66,8 +66,9 @@ namespace stat_log
          template <typename AccumSet, typename HistTypeTag, typename bin_sample_type>
          struct traits_common_hist
          {
+            using sample_type = typename AccumSet::sample_type;
             using shared_type = std::array<
-               std::tuple<typename AccumSet::sample_type, bin_sample_type>, // (bin_start, bin value)
+               std::tuple<sample_type, bin_sample_type>, // (bin_start, bin value)
                AccumSet::num_hist_bins>;
             static void serialize(AccumSet& acc, char* ptr)
             {
@@ -98,15 +99,22 @@ namespace stat_log
                }
             }
 
-            static void dumpStat(void* ptr, std::stringstream& ss)
+            static void dumpStat(void* ptr, bool is_valid, std::stringstream& ss)
             {
                auto hist_ptr = reinterpret_cast<shared_type*>(ptr);
                for(std::size_t i = 0; i < hist_ptr->size(); ++i)
                {
                   ss.precision(4);
                   ss.width(8);
-                  const auto& tup = (*hist_ptr)[i];
-                  ss << std::get<1>(tup);
+                  if(is_valid)
+                  {
+                     const auto& tup = (*hist_ptr)[i];
+                     ss << std::get<1>(tup);
+                  }
+                  else
+                  {
+                     ss << sample_type{}; //Valid initialization to "0"
+                  }
                }
             }
          };

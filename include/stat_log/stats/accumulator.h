@@ -146,6 +146,8 @@ namespace detail
          using namespace boost::fusion;
 
          auto ptr = reinterpret_cast<char*>(shared_ptr);
+         const auto control_word_ptr = reinterpret_cast<control_word*>(
+               ptr + sizeof(shared_type) - sizeof(control_word));
          std::stringstream ss_title;
          std::stringstream ss_entry;
          if(cmd == StatCmd::DUMP_STAT)
@@ -181,7 +183,7 @@ namespace detail
                   ss_entry.width(max_pad);
                   ss_entry.precision(max_width);
                }
-               FeatureHandlerType::dumpStat(ptr, ss_entry);
+               FeatureHandlerType::dumpStat(ptr, *control_word_ptr == 0, ss_entry);
                ptr += FeatureHandlerType::size();
             });
             stat_output.entryTitle = ss_title.str();
@@ -199,8 +201,6 @@ namespace detail
          }
          else if(cmd == StatCmd::CLEAR_STAT)
          {
-            ptr += sizeof(shared_type) - sizeof(control_word);
-            auto control_word_ptr = reinterpret_cast<control_word*>(ptr);
             *control_word_ptr = 1;
          }
       }

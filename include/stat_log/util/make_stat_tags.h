@@ -110,6 +110,7 @@
 #include <boost/fusion/include/cons.hpp>
 #include <boost/fusion/include/as_list.hpp>
 #include <boost/fusion/include/push_back.hpp>
+#include <boost/fusion/include/join.hpp>
 
 
 //// SL_MAKE_LIST ///////////
@@ -178,5 +179,12 @@
    using NewListName = boost::fusion::result_of::as_list<\
       boost::fusion::result_of::push_back<OrigListName, elem>::type\
    >::type
+//////////////////////////////////////////
+
+
+//// SL_JOIN_LISTS ///////////
+#define SL_JOIN_LISTS(NewListName, FirstList, SecondList) \
+   using NewListName = boost::fusion::result_of::as_list<\
+      boost::fusion::result_of::join<FirstList, SecondList>::type>::type;
 //////////////////////////////////////////
 

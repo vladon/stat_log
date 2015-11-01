@@ -64,5 +64,4 @@ namespace stat_log
 
    template<typename Tag>
    LogGenProxy hexDumper(LogLevel = LogLevel::INFO);
-
 }

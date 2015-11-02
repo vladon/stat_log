@@ -15,6 +15,7 @@
 #include <type_traits>
 #include <vector>
 #include <string>
+#include <assert.h>
 
 namespace stat_log
 {
@@ -86,6 +87,7 @@ namespace stat_array_detail
       {
          auto& shared_array = *reinterpret_cast<shared_type*>(ptr);
          auto this_ptr = reinterpret_cast<void*>(&shared_array[idx]);
+         assert(idx >= 0 && idx < (int)Size);
          statEntries[idx].write(this_ptr, value);
       }
 
@@ -152,6 +154,7 @@ namespace stat_array_detail
       {
          auto& theArray = *reinterpret_cast<shared_type*>(ptr);
          auto child_ptr = reinterpret_cast<void*>(&theArray[idx]);
+         assert(idx >= 0 && idx < (int)Size);
          statEntries[idx].write(child_ptr, args...);
       }
 
